@@ -3,11 +3,10 @@ Step-by-step analysis pipeline for ATAC-seq data
 
 The following pipeline will describe the step-by-step analysis of ATAC-seq data (the **a**ssay for **t**ransposase-**a**ccessible **c**hromatin with **seq**uencing). This has been adapted from the following resources:
 
-- https://vallierlab.wixsite.com/pipelines/atac-seq
-- https://www.encodeproject.org/atac-seq/ *the recommended ENCODE pipeline*
-- https://github.com/ENCODE-DCC/atac-seq-pipeline *the ENCODE pipeline available on github*
-- https://github.com/harvardinformatics/ATAC-seq
-- https://docs.google.com/document/d/1f0Cm4vRyDQDu0bMehHD7P7KOMxTOP-HiNoIvL1VcBt8/edit
+- https://vallierlab.wixsite.com/pipelines/atac-seq A great tool for beginners indicating the major analysis steps and linking relevant tools  
+- https://www.encodeproject.org/atac-seq/ The recommended ENCODE pipeline, for which tools are available on [github](https://github.com/ENCODE-DCC/atac-seq-pipeline) and the recommended parameters/specification are available via a [google doc](https://docs.google.com/document/d/1f0Cm4vRyDQDu0bMehHD7P7KOMxTOP-HiNoIvL1VcBt8/edit)
+- https://github.com/harvardinformatics/ATAC-seq An ATAC-seq pipeline from Harvard Informatics 
+- https://yiweiniu.github.io/blog/2019/03/ATAC-seq-data-analysis-from-FASTQ-to-peaks/ A similar github page which clearly presents an ATAC-seq pipeline
 
 An excellent recent review on the ATAC-seq analysis pipeline is reported by [(Yan et al. 2020)](https://genomebiology.biomedcentral.com/track/pdf/10.1186/s13059-020-1929-3).
 
@@ -19,13 +18,14 @@ The following steps will be covered:
 - Visualisation
 - Functional analysis & Motif Discovery
 
+For the following steps, it is assumed that the filename (excluding the extension) is saved to a variable called `base`. For example, `base=sample1` for raw data files `sample1_1.fastq` and `sample1_2.fastq` (assuming paired-end data). The sample ID can be called as "$base".
 
 ## Pre-alignment QC
 
-[FastQC reports](https://dnacore.missouri.edu/PDF/FastQC_Manual.pdf) can be generated for all samples to assess sequence quality, GC content, duplication rates, length distribution, K-mer content and adapter contamination. In ATAC-seq data, it is likely that Nextera sequencing adapters will be over-represented. As described by [(Yan et al. 2020)](https://genomebiology.biomedcentr\
-al.com/track/pdf/10.1186/s13059-020-1929-3), base quality should be high although may drop slightly at the 3' end, while GC content and read length should be consistent with the expected values. For paired-end reads, run fastqc on both files:
+The raw sequence data should first be assessed for quality. [FastQC reports](https://dnacore.missouri.edu/PDF/FastQC_Manual.pdf) can be generated for all samples to assess sequence quality, GC content, duplication rates, length distribution, K-mer content and adapter contamination. In ATAC-seq data, it is likely that Nextera sequencing adapters will be over-represented. As described by [(Yan et al. 2020)](https://genomebiology.biomedcentral.com/track/pdf/10.1186/s13059-020-1929-3), base quality should be high although may drop slightly at the 3' end, while GC content and read length should be consistent with the expected values. For paired-end reads, run fastqc on both files:
 
-`fastqc "$base"_1.fastq.gz -d . -o .` 
+`fastqc "$base"_1.fastq.gz -d . -o .`
+
 `fastqc "$base"_2.fastq.gz -d . -o .`
 
 Adapters and low quality reads/bases can be trimmed using one of several programs, such as [trimmomatic](http://www.usadellab.org/cms/?page=trimmomatic) or [cutadapt](https://cutadapt.readthedocs.io/en/stable/). 
