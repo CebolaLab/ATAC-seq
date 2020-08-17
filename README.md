@@ -30,13 +30,13 @@ The raw sequence data should first be assessed for quality. [FastQC reports](htt
 
 Adapters and low quality reads/bases can be trimmed using one of several programs, such as [trimmomatic](http://www.usadellab.org/cms/?page=trimmomatic) or [cutadapt](https://cutadapt.readthedocs.io/en/stable/). Here, trimmomatic is used.
 
-The user should specific whether the raw data is encoded in phred+33 or phred+63 (read more [here](https://sequencing.qcfail.com/articles/incorrect-encoding-of-phred-scores/)). Most data should be encoded in the standardised phred+33. This can be confirmed using the fastQC report generated previously: the 'Encoding' field should read Sander / Illumina 1.9 as below: 
+The user should specific whether the raw data is encoded in phred+33 or phred+63 (read more [here](https://sequencing.qcfail.com/articles/incorrect-encoding-of-phred-scores/)). Most data should be encoded in the standardised phred+33. This can be confirmed using the fastQC report generated previously: the 'Encoding' field should read Sanger / Illumina 1.9 as below: 
 
-<img src="https://github.com/CebolaLab/ATAC-seq/blob/master/Figures/fastqc1.png" width="400">
+<img src="https://github.com/CebolaLab/ATAC-seq/blob/master/Figures/fastqc1.png" width="500">
 
-Trim to a fixed length yes or no? Vallier lab says yes, paper suggests that one of the advantages is shorter fragments?
+The phred encoding is specified when using trimmomatics to trim adapters. In the following example, the Nextera transposase adapter sequences are saved in the file `nextera-adapters.fa`.
 
-`trimmomatic ... `
+`trimmomatic PE -phred33 -trimlog "$base".trimLogFile "$base"_R1.fastq.gz "$base"_R2.fastq.gz "$base"_R1_trimmed_paired.fastq.gz "$base"_R1_trimmed_unpaired.fastq.gz "$base"_R2_trimmed_paired.fastq.gz "$base"_R2_trimmed_unpaired.fastq.gz ILLUMINACLIP:nextera-adapters.fa:2:30:10:2:keepBothReads LEADING:3 TRAILING:3 MINLEN:36`
 
 A QC report can be generated following trimming to compare the quality before and after trimming.
 
