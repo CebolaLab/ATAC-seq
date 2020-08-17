@@ -3,10 +3,10 @@ Step-by-step analysis pipeline for ATAC-seq data
 
 The following pipeline will describe the step-by-step analysis of ATAC-seq data (the **a**ssay for **t**ransposase-**a**ccessible **c**hromatin with **seq**uencing). This has been adapted from the following resources:
 
-- https://vallierlab.wixsite.com/pipelines/atac-seq A great tool for beginners indicating the major analysis steps and linking relevant tools  
+- https://vallierlab.wixsite.com/pipelines/atac-seq A great tool for beginners indicating the major analysis steps 
 - https://www.encodeproject.org/atac-seq/ The recommended ENCODE pipeline, for which tools are available on [github](https://github.com/ENCODE-DCC/atac-seq-pipeline) and the recommended parameters/specification are available via a [google doc](https://docs.google.com/document/d/1f0Cm4vRyDQDu0bMehHD7P7KOMxTOP-HiNoIvL1VcBt8/edit)
 - https://github.com/harvardinformatics/ATAC-seq An ATAC-seq pipeline from Harvard Informatics 
-- https://yiweiniu.github.io/blog/2019/03/ATAC-seq-data-analysis-from-FASTQ-to-peaks/ A similar github page which clearly presents an ATAC-seq pipeline
+- https://yiweiniu.github.io/blog/2019/03/ATAC-seq-data-analysis-from-FASTQ-to-peaks/ A similar github page presenting an ATAC-seq pipeline 
 
 An excellent recent review on the ATAC-seq analysis pipeline is reported by [(Yan et al. 2020)](https://genomebiology.biomedcentral.com/track/pdf/10.1186/s13059-020-1929-3).
 
@@ -28,7 +28,11 @@ The raw sequence data should first be assessed for quality. [FastQC reports](htt
 
 `fastqc "$base"_2.fastq.gz -d . -o .`
 
-Adapters and low quality reads/bases can be trimmed using one of several programs, such as [trimmomatic](http://www.usadellab.org/cms/?page=trimmomatic) or [cutadapt](https://cutadapt.readthedocs.io/en/stable/). 
+Adapters and low quality reads/bases can be trimmed using one of several programs, such as [trimmomatic](http://www.usadellab.org/cms/?page=trimmomatic) or [cutadapt](https://cutadapt.readthedocs.io/en/stable/). Here, trimmomatic is used.
+
+The user should specific whether the raw data is encoded in phred+33 or phred+63 (read more [here](https://sequencing.qcfail.com/articles/incorrect-encoding-of-phred-scores/)). Most data should be encoded in the standardised phred+33. This can be confirmed using the fastQC report generated previously: the 'Encoding' field should read Sander / Illumina 1.9 as below: 
+
+![FastQC](Figures/fastqc1.png)
 
 Trim to a fixed length yes or no? Vallier lab says yes, paper suggests that one of the advantages is shorter fragments?
 
