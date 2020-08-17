@@ -32,7 +32,7 @@ Adapters and low quality reads/bases can be trimmed using one of several program
 
 The user should specific whether the raw data is encoded in phred+33 or phred+63 (read more [here](https://sequencing.qcfail.com/articles/incorrect-encoding-of-phred-scores/)). Most data should be encoded in the standardised phred+33. This can be confirmed using the fastQC report generated previously: the 'Encoding' field should read Sander / Illumina 1.9 as below: 
 
-<img src="https://github.com/CebolaLab/ATAC-seq/blob/master/Figures/fastqc1.png" width="200">
+<img src="https://github.com/CebolaLab/ATAC-seq/blob/master/Figures/fastqc1.png" width="400">
 
 Trim to a fixed length yes or no? Vallier lab says yes, paper suggests that one of the advantages is shorter fragments?
 
