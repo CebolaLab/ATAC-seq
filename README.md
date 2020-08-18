@@ -18,36 +18,48 @@ The following steps will be covered:
 - Visualisation
 - Functional analysis & Motif Discovery
 
-For the following steps, it is assumed that the filename (excluding the extension) is saved to a variable called `base`. For example, `base=sample1` for raw data files `sample1_1.fastq` and `sample1_2.fastq` (assuming paired-end data). The sample ID can be called as "$base".
-
 ## Pre-alignment QC
 
-The raw sequence data should first be assessed for quality. [FastQC reports](https://dnacore.missouri.edu/PDF/FastQC_Manual.pdf) can be generated for all samples to assess sequence quality, GC content, duplication rates, length distribution, K-mer content and adapter contamination. In ATAC-seq data, it is likely that Nextera sequencing adapters will be over-represented. As described by [(Yan et al. 2020)](https://genomebiology.biomedcentral.com/track/pdf/10.1186/s13059-020-1929-3), base quality should be high although may drop slightly at the 3' end, while GC content and read length should be consistent with the expected values. For paired-end reads, run fastqc on both files:
+Firstly, if the same sample has been sequenced on multiple lanes, concatenate the files:
 
-`fastqc "$base"_1.fastq.gz -d . -o .`
+`cat  <sample>.lane1.R1.fastq.gz  <sample>.lane2.R1.fastq.gz  >  <sample>.R1.fastq.gz`
 
-`fastqc "$base"_2.fastq.gz -d . -o .`
+`cat  <sample>.lane1.R2.fastq.gz  <sample>.lane2.R2.fastq.gz  >  <sample>.R2.fastq.gz`
 
-Adapters and low quality reads/bases can be trimmed using one of several programs, such as [trimmomatic](http://www.usadellab.org/cms/?page=trimmomatic) or [cutadapt](https://cutadapt.readthedocs.io/en/stable/). Here, trimmomatic is used.
+Independent replicates should be processed separately.
+
+### Initial QC report
+
+The raw sequence data should first be assessed for quality. [FastQC reports](https://dnacore.missouri.edu/PDF/FastQC_Manual.pdf) can be generated for all samples to assess sequence quality, GC content, duplication rates, length distribution, K-mer content and adapter contamination. In ATAC-seq data, it is likely that Nextera sequencing adapters will be over-represented. As described by [(Yan et al. 2020)](https://genomebiology.biomedcentral.com/track/pdf/10.1186/s13059-020-1929-3), base quality should be high although may drop slightly at the 3' end, while GC content and read length should be consistent with the expected values. For paired-end reads, run fastqc on both files, with the results output to the current directory:
+
+`fastqc <sample>_1.fastq.gz -d . -o .`
+
+`fastqc <sample>_2.fastq.gz -d . -o .`
+
+### Adapter trimming 
+
+Adapters and low quality reads/bases can be trimmed using one of several programs, such as [trimmomatic](http://www.usadellab.org/cms/?page=trimmomatic) or [cutadapt](https://cutadapt.readthedocs.io/en/stable/). For paired-end data, it is recommended to use NGmerge by [(Gasper, 2018)](https://bmcbioinformatics.biomedcentral.com/articles/10.1186/s12859-018-2579-2), which removes the 3' overhang due to contaminating adapters from fully overlapping paired-end reads. NGmerge does not perform adapter matching and therefore does not require an input of adapter sequences nor a minimum match to be specified. NGmerge has been pre-downloaded into this repository and can also be downloaded directly from the Harvard Informatics [github](https://github.com/harvardinformatics/NGmerge).
+
+`NGmerge -a -u 42 -1 <sample>_R1.fastq.gz -2 <sample>_R2.fastq.gz -o <sample>_no_adapters` 
+
 
 The user should specific whether the raw data is encoded in phred+33 or phred+63 (read more [here](https://sequencing.qcfail.com/articles/incorrect-encoding-of-phred-scores/)). Most data should be encoded in the standardised phred+33. This can be confirmed using the fastQC report generated previously: the 'Encoding' field should read Sanger / Illumina 1.9 as below: 
 
 <img src="https://github.com/CebolaLab/ATAC-seq/blob/master/Figures/fastqc1.png" width="500">
 
-The phred encoding is specified when using trimmomatics to trim adapters. In the following example, the Nextera transposase adapter sequences are saved in the file `nextera-adapters.fa`.
+The phred encoding is specified when using trimmomatics to trim adapters. In the following example, the Nextera transposase adapter sequences are saved in the file `nextera-adapters.fa`. Other Illumina adapters sequences can be found [here](https://dnatech.genomecenter.ucdavis.edu/wp-content/uploads/2013/06/illumina-adapter-sequences_1000000002694-00.pdf).
 
-`trimmomatic PE -phred33 -trimlog "$base".trimLogFile "$base"_R1.fastq.gz "$base"_R2.fastq.gz "$base"_R1_trimmed_paired.fastq.gz "$base"_R1_trimmed_unpaired.fastq.gz "$base"_R2_trimmed_paired.fastq.gz "$base"_R2_trimmed_unpaired.fastq.gz ILLUMINACLIP:nextera-adapters.fa:2:30:10:2:keepBothReads LEADING:3 TRAILING:3 MINLEN:36`
+`trimmomatic PE -phred33 -trimlog <sample>.trimLogFile <sample>_R1.fastq.gz <sample>_R2.fastq.gz <sample>_R1_trimmed_paired.fastq.gz <sample>_R1_trimmed_unpaired.fastq.gz <sample>_R2_trimmed_paired.fastq.gz <sample>_R2_trimmed_unpaired.fastq.gz ILLUMINACLIP:nextera-adapters.fa:2:30:10:2:keepBothReads LEADING:3 TRAILING:3 MINLEN:36`
 
 A QC report can be generated following trimming to compare the quality before and after trimming.
 
-`fastqc "$base"_1_trimmed.fastq.gz -d . -o .`  
+`fastqc <sample>_1_trimmed.fastq.gz -d . -o .`  
 
 ## Alignment
 
 The processed reads should then be aligned to the reference human genome using an aligner such as [bowtie2](http://bowtie-bio.sourceforge.net/bowtie2/index.shtml) 
 
-
-`bowtie2 -x $bt2idx/hg19.masked -1 "$base"_1.paired.fastq.gz -2 "$base"_2.paired.fastq.gz) 2> "$base".bowtie2 | samtools view -bS - > "$base"_aligned_reads.bam`
+`bowtie2 -x $bt2idx/hg19.masked -1 <sample>_1.paired.fastq.gz -2 <sample>_2.paired.fastq.gz) 2> <sample>.bowtie2 | samtools view -bS - > <sample>_aligned_reads.bam`
 
 ## Post-alignment QC
 
