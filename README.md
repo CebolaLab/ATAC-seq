@@ -7,6 +7,7 @@ The following pipeline will describe the step-by-step analysis of ATAC-seq data 
 - https://www.encodeproject.org/atac-seq/ The recommended ENCODE pipeline, for which tools are available on [github](https://github.com/ENCODE-DCC/atac-seq-pipeline) and the recommended parameters/specification are available via a [google doc](https://docs.google.com/document/d/1f0Cm4vRyDQDu0bMehHD7P7KOMxTOP-HiNoIvL1VcBt8/edit)
 - https://github.com/harvardinformatics/ATAC-seq An ATAC-seq pipeline from Harvard Informatics 
 - https://yiweiniu.github.io/blog/2019/03/ATAC-seq-data-analysis-from-FASTQ-to-peaks/ A similar github page presenting an ATAC-seq pipeline 
+- https://galaxyproject.github.io/training-material/topics/epigenetics/tutorials/atac-seq/tutorial.html
 
 An excellent recent review on the ATAC-seq analysis pipeline is reported by [(Yan et al. 2020)](https://genomebiology.biomedcentral.com/track/pdf/10.1186/s13059-020-1929-3).
 
@@ -38,10 +39,7 @@ The raw sequence data should first be assessed for quality. [FastQC reports](htt
 
 ### Adapter trimming 
 
-Adapters and low quality reads/bases can be trimmed using one of several programs, such as [trimmomatic](http://www.usadellab.org/cms/?page=trimmomatic) or [cutadapt](https://cutadapt.readthedocs.io/en/stable/). For paired-end data, it is recommended to use NGmerge by [(Gasper, 2018)](https://bmcbioinformatics.biomedcentral.com/articles/10.1186/s12859-018-2579-2), which removes the 3' overhang due to contaminating adapters from fully overlapping paired-end reads. NGmerge does not perform adapter matching and therefore does not require an input of adapter sequences nor a minimum match to be specified. NGmerge has been pre-downloaded into this repository and can also be downloaded directly from the Harvard Informatics [github](https://github.com/harvardinformatics/NGmerge).
-
-`NGmerge -a -u 42 -1 <sample>_R1.fastq.gz -2 <sample>_R2.fastq.gz -o <sample>_no_adapters` 
-
+Adapters and low quality reads/bases can be trimmed using one of several programs, such as [trimmomatic](http://www.usadellab.org/cms/?page=trimmomatic) or [cutadapt](https://cutadapt.readthedocs.io/en/stable/). For this pipeline, the user is advised to use cutadapt. 
 
 The user should specific whether the raw data is encoded in phred+33 or phred+63 (read more [here](https://sequencing.qcfail.com/articles/incorrect-encoding-of-phred-scores/)). Most data should be encoded in the standardised phred+33. This can be confirmed using the fastQC report generated previously: the 'Encoding' field should read Sanger / Illumina 1.9 as below: 
 
@@ -57,9 +55,11 @@ A QC report can be generated following trimming to compare the quality before an
 
 ## Alignment
 
-The processed reads should then be aligned to the reference human genome using an aligner such as [bowtie2](http://bowtie-bio.sourceforge.net/bowtie2/index.shtml) 
+The processed reads should then be aligned to the reference human genome using an aligner such as [bowtie2](http://bowtie-bio.sourceforge.net/bowtie2/index.shtml).
 
-`bowtie2 -x $bt2idx/hg19.masked -1 <sample>_1.paired.fastq.gz -2 <sample>_2.paired.fastq.gz) 2> <sample>.bowtie2 | samtools view -bS - > <sample>_aligned_reads.bam`
+Here we align to the canoncial, masked genome (excluding alternative contigs and repetitive regions), so that reads are likely to map to one unique location. The `local` parameter is used, since cutadapt removes adapter sequences >3bp; the `local` parameter 'soft clips' the end of reads to allow the best possible alignment, including any remaining adapter sequences (1 or 2bp).  
+
+`bowtie2 --local -x $bt2idx/hg19.masked -1 <sample>_1.paired.fastq.gz -2 <sample>_2.paired.fastq.gz) 2> <sample>.bowtie2 | samtools view -bS - > <sample>_aligned_reads.bam`
 
 ## Post-alignment QC
 
