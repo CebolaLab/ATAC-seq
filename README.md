@@ -55,11 +55,11 @@ A QC report can be generated following trimming to compare the quality before an
 
 ## Alignment
 
-The processed reads should then be aligned to the reference human genome using an aligner such as [bowtie2](http://bowtie-bio.sourceforge.net/bowtie2/index.shtml).
+The processed reads should then be aligned to the reference human genome using an aligner such as [bowtie2](http://bowtie-bio.sourceforge.net/bowtie2/index.shtml). This pipeline will align reads to the hg19 reference genome. If the user is aligning to the more recent GRCh38 release, it is recommended to remove alternative contigs otherwise reads may not map uniquely and may be assigned a low quality score. Suggested guidelines for preparing the GRCh38 genome are discussed in [this](https://www.biostars.org/p/342482/) tutorial. If the user decides to align using an aligner other than bowtie2, they are referred to [this blog post](https://www.acgt.me/?offset=1426809676847) which discusses the different alignment quality scores assigned by different aligers - this may require adjustments in downstream steps.  
 
-Here we align to the canoncial, masked genome (excluding alternative contigs and repetitive regions), so that reads are likely to map to one unique location. The `local` parameter is used, since cutadapt removes adapter sequences >3bp; the `local` parameter 'soft clips' the end of reads to allow the best possible alignment, including any remaining adapter sequences (1 or 2bp).  
+The `local` parameter is used, since cutadapt removes adapter sequences >3bp; the `local` parameter 'soft clips' the end of reads to allow the best possible alignment, including any remaining adapter sequences (1 or 2bp).  By using the `--no-mixed` and `--no-discordant` parameters, reads will only be aligned if both reads align successfully as a pair (this avoids the need to later remove reads which are not properly paired, which is a common post-alignment QC step).
 
-`bowtie2 --local -x $bt2idx/hg19.masked -1 <sample>_1.paired.fastq.gz -2 <sample>_2.paired.fastq.gz) 2> <sample>.bowtie2 | samtools view -bS - > <sample>_aligned_reads.bam`
+`bowtie2 --local --very-sensitive --no-mixed --no-discordant -x $bt2idx/hg19.masked -1 <sample>_1.paired.fastq.gz -2 <sample>_2.paired.fastq.gz) 2> <sample>.bowtie2 | samtools view -bS - > <sample>_aligned_reads.bam`
 
 ## Post-alignment QC
 
