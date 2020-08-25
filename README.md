@@ -138,18 +138,18 @@ If a read is multi-mapped, it is assigned a low quality score by bowtie2. To vie
 samtools view -q 30 -c <sample>.marked.bam
 ```
 
-A low % of uniquely mapped reads map result from short reads, excessive PCR amplification or problems with the PCR (Bailey et al. 2013). The following code uses the `sam/bam` flags to retain properly mapped pairs (`-f 2`) and to remove reads which fail the platform/vendor QC checks (`-F 512`), duplicate reads (`-F 1024`) and those which are unmapped (`-F 12`).
+A low % of uniquely mapped reads map result from short reads, excessive PCR amplification or problems with the PCR (Bailey et al. 2013). The following code uses the `sam/bam` flags to retain properly mapped pairs (`-f 2`) and to remove reads which fail the platform/vendor QC checks (`-F 512`), duplicate reads (`-F 1024`) and those which are unmapped (`-F 12`). The three flags to be removed can be combined into `-F 1548`, which will remove reads which meet any of the three individual flags
 
 To ***retain*** multi-mapped reads:
 
 ```
-samtools view -h -b -f 2 -F 1024 -F 12 -F 512 <sample>.rmChrM.bam | samtools sort -n <sample>.filtered.bam 
+samtools view -h -b -f 2 -F 1548 <sample>.rmChrM.bam | samtools sort -n <sample>.filtered.bam 
 ```
 
 To ***remove*** multi-mapped reads:
 
 ```
-samtools view -h -b -f 2 -F 1024 -F 12 -F 512 -q 30 <sample>.rmChrM.bam | samtools sort -n <sample>.filtered.bam
+samtools view -h -b -f 2 -F 1548 -q 30 <sample>.rmChrM.bam | samtools sort -n <sample>.filtered.bam
 ```
 
 The output `bam` file, which is now sorted by name, should be indexed: 
@@ -175,23 +175,28 @@ The fragment size is expected to show a periodicity of 150/200 bp, reflecting th
 - Plot footprints
 - Plot correlations between samples
 
+## Peak calling
+
+Peaks are identified where sequenced reads accumulate. These correspond to regions of accessible DNA.
+
+Important considerations for ATAC-seq: there are usually no controls; the Tn5 transposase has a binding preference, resulting in a GC bias which should be corrected for during peak calling; repair of the transposase-induced nick introduces a 9bp insertion. When investigating high-resolution motif enrichment, ATAC-seq reads are shifted +4bp and -5bp for positive and negative strands to account for this. This step is not necessary for peak calling, since hundreds of bp are typically implicated.  [Yan et al. (2020)](https://genomebiology.biomedcentral.com/track/pdf/10.1186/s13059-020-1929-3) recommend using the peak caller HMMRATAC, developed by [Tarbell et al. (2019)](https://academic.oup.com/nar/article/47/16/e91/5519166), which is specifically developed for ATAC-seq data (if computational resources are sufficient). Alternatively, MACS2 is a pop\lar peak caller.
+
+
+HMMRATAC is available on [github](https://github.com/LiuLabUB/HMMRATAC).
+
+The input file should be sorted by coordinate and indexed.
+
+```
+samtools view -H <sample>.filtered.bam | perl -ne 'if(/^@SQ.*?SN:(\w+)\s+LN:(\d+)/){print $1,"\t",$2,"\n"}' > genome.info
+
+java -jar HMMRATAC_V1.2.10_exe.jar -b <sample>.filtered.bam -i <sample>.filtered.bam.bai -g genome.info -o <sample>
+```
+
+## Additional analysis: motif calling
+
 An important step with ATAC-seq data is to shift reads +4bp and -5bp for positive and negative strands, due to the 9bp duplication introducted through the repair of the Tn5 transposase nick.
 
 ```
 picard CollectInsertSizeMetrics
 ```
 
-## Peak calling  
-
-Peaks are identified where sequenced reads accumulate. These correspond to regions of accessible DNA. 
-
-Important considerations for ATAC-seq: there are usually no controls; the Tn5 transposase has a binding preference, resulting in a GC bias which should be corrected for during peak calling; repair of the transposase-induced nick introduces a 9bp insertion which should be corrected for. [Yan et al. (2020)](https://genomebiology.biomedcentral.com/track/pdf/10.1186/s13059-020-1929-3) recommend using the peak caller HMMRATAC, developed by [Tarbell et al. (2019)](https://academic.oup.com/nar/article/47/16/e91/5519166), which is specifically developed for ATAC-seq data (if computational resources are sufficient). Alternatively, MACS2 is a popular peak caller. 
-
-
-```
-bedtools bamtobed -bedpe -i <sample>.filtered.bam | awk 'BEGIN{OFS="\t"}{print $1,$2,$4,$6,$9,$10}' | grep -v 'chrM' | sort | uni\
-q -c | awk 'BEGIN{mt=0;m0=0;m1=0;m2=0} ($1==1){m1=m1+1} ($1==2){m2=m2+1} {m0=m0+1} {mt=mt+$1} END{printf "%d\t%d\t%d\t%d\t%f\t%f\\
-t%f\n",mt,m0,m1,m2,m0/mt,m1/m0,m1/m2}' > ${PBC_FILE_QC}
-rm ${OFPREFIX}.srt.tmp.bam
-
-```
