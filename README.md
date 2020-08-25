@@ -81,11 +81,10 @@ picard SortSam I=<sample>_aligned_reads.bam O=<sample>_sorted.bam SO=coordinate 
 The post-alignment QC steps involve several steps:
 
 - [Remove mitochondrial reads](#remove-mitochondrial-reads)
-- [Remove low-quality alignments](#remove-low-quality-alignments) (including non-uniquely mapped reads)
-- [Remove duplicates](#remove-duplicates)
-- [Remove ENCODE blacklisted regions](#remove-encode-blacklisted-regions)
+- [Remove duplicates & low-quality alignments](#remove-duplicates-&-low-quality-alignments) (including non-uniquely mapped reads)
+- [Calculate library complexity](#calculate-library-complexity)
 
-For an ATAC-seq experiment, the number of uniquely mapped reads *after these steps* is recommended to be 25 million of 50 million paired-end reads. Specific to ATAC-seq, an additional QC step is to check the fragment size distribution, which is expected to correspond to the length of nucleosomes 
+For an ATAC-seq experiment, the number of uniquely mapped reads *after these steps* is recommended to be 25 million of 50 million paired-end reads. Specific to ATAC-seq, an additional QC step is to check the fragment size distribution, which is expected to correspond to the length of nucleosomes:
 
 - [Assess fragment size distribution](#assess-fragment-size-distribution)
 
@@ -139,26 +138,25 @@ If a read is multi-mapped, it is assigned a low quality score by bowtie2. To vie
 samtools view -q 30 -c <sample>.marked.bam
 ```
 
-A low % of uniquely mapped reads map result from short reads, excessive PCR amplification or problems with the PCR (Bailey et al. 2013). The following code uses the `sam/bam` flags to retain properly mapped pairs (`-f 2`), reads which fail the latform/vendor QC checks (`-F 512`) and remove duplicate reads (`-F 1024`) and those which are unmapped (`-F 12`).
+A low % of uniquely mapped reads map result from short reads, excessive PCR amplification or problems with the PCR (Bailey et al. 2013). The following code uses the `sam/bam` flags to retain properly mapped pairs (`-f 2`) and to remove reads which fail the platform/vendor QC checks (`-F 512`), duplicate reads (`-F 1024`) and those which are unmapped (`-F 12`).
 
 To ***retain*** multi-mapped reads:
 
 ```
-samtools view -h -b -f 2 -F 1024 -F 12 -F 512 <sample>.rmChrM.bam > <sample>.filtered.bam
+samtools view -h -b -f 2 -F 1024 -F 12 -F 512 <sample>.rmChrM.bam | samtools sort -n <sample>.filtered.bam 
 ```
 
-To ***remove*** multi-mapped reads, add `-q 30` to specify a minimum quality score of 30:
+To ***remove*** multi-mapped reads:
 
 ```
-samtools view -h -b -f 2 -F 1024 -F 12 -F 512 -q 30 <sample>.rmChrM.bam > <sample>.filtered.bam
+samtools view -h -b -f 2 -F 1024 -F 12 -F 512 -q 30 <sample>.rmChrM.bam | samtools sort -n <sample>.filtered.bam
 ```
 
 ```
-samtools fixmate 
+samtools index <sample>.filtered.bam
 ```
 
-#### Remove ENCODE blacklisted regions 
-
+#### Calculate library complexity
 
 #### QC
 To assess the total number of DNA fragments aligned following these QC steps, 
