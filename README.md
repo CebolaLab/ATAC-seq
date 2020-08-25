@@ -62,7 +62,11 @@ The processed reads should then be aligned to the reference human genome using a
 
 The `local` parameter is used to 'soft clip' the end of reads to allow the best possible alignment, including any remaining adapter sequences (e.g. 1 or 2bp).  By using the `--no-mixed` and `--no-discordant` parameters, reads will only be aligned if both reads align successfully as a pair (this avoids the need to later remove reads which are not properly paired, which is a common post-alignment QC step). The -I 50 and -X 700 require fragments to be greater than 50bp and less than 700bp. The user can adjust these depending on the experiment/sequencing protocol (see the fastp html report for a plot of the estimated insert sizes). Here, 50 is specified as the minimum fragment length since fastp removed any DNA reads of <50 in the previous fastp step. 
 
+The variable bt2idx can be set to set to the path where the reference genome and bowtie2 index files are stored. Bowtie2 can be used to create the index files (see the [manual](http://bowtie-bio.sourceforge.net/bowtie2/manual.shtml#indexing-a-reference-genome)). For users with access to the Imperial College HPC and Cebola Lab project space, the reference genomes are located at `/rds/general/user/hm1412/projects/cebolalab_liver_regulomes/live/reference-genomes/`. 
+
 ```
+bt2idx=$(/path/to/reference/genome)
+
 bowtie2 --local --very-sensitive --no-mixed --no-discordant -I 50 -X 700 -x $bt2idx/hg19.masked -1 <sample>_1.paired.fastq.gz -2 <sample>_2.paired.fastq.gz) 2> <sample>.bowtie2 | samtools view -bS - > <sample>_aligned_reads.bam
 ```
 
