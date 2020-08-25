@@ -83,7 +83,7 @@ The post-alignment QC steps involve several steps:
 - [Remove mitochondrial reads](#remove-mitochondrial-reads)
 - [Remove low-quality alignments](#remove-low-quality-alignments) (including non-uniquely mapped reads)
 - [Remove duplicates](#remove-duplicates)
-- Remove ENCODE blacklisted regions
+- [Remove ENCODE blacklisted regions](#remove-encode-blacklisted-regions)
 
 For an ATAC-seq experiment, the number of uniquely mapped reads *after these steps* is recommended to be 25 million of 50 million paired-end reads. Specific to ATAC-seq, an additional QC step is to check the fragment size distribution, which is expected to correspond to the length of nucleosomes 
 
@@ -99,7 +99,7 @@ samtools idxstats <sample>_sorted.bam > <sample>_sorted.idxstats
 grep "chrM" <sample>_sorted.idxstats
 ```
 
-To see the total number of DNA fragments, run:
+The second column is the length of the chromosome and the third column is the total number of reads aligned to the chromosome (chrM). To see the total number of DNA fragments, run:
 
 ```
 samtools flagstat <sample>_sorted.bam > <sample>_sorted.flagstat
@@ -113,16 +113,60 @@ The % of DNA fragments aligned to chrM can be calculated as a % of the total DNA
 samtools view -h <sample>-sorted.bam | grep -v chrM | samtools sort -O bam -o <sample>.rmChrM.bam -T .
 ```
 
-#### Remove low-quality alignments 
+#### Mark duplicates 
 
-#### Remove duplicates
+To mark duplicate reads:
 
+```
+picard MarkDuplicates QUIET=true INPUT=<sample>.filtered.bam OUTPUT=<sample>.marked.bam METRICS_FILE=<sample>.filtered.metrics REMOVE_DUPLICATES=false CREATE_INDEX=true VALIDATION_STRINGENCY=LENIENT TMP_DIR=.
+```
+
+The % of duplicates can be viewed using:
+
+```
+head -n 8 <sample>.filtered.metrics | cut -f 7,9 | grep -v ^# | tail -n 2
+```
+
+#### Remove duplicates & low-quality alignments 
+
+The output `sam/bam` files contain several measures of quality. First, the alignment quality score. Reads which are uniquely mapped are assigned a high alignment quality score and one genomic position. If reads can map to more than one location, Bowtie2 reports one position and assigns a low quality score. The proportion of uniquely mapped reads can be assessed. In general, >70% uniquely mapped reads is expected, while <50% may be a cause for concern [(Bailey et al. 2013)](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3828144/pdf/pcbi.1003326.pdf). Secondly, the 'flag' reports information such as whether the read is mapped as a pair or is a PCR duplicate. The individual flags are reported [here](https://hbctraining.github.io/Intro-to-rnaseq-hpc-O2/lessons/04_alignment_quality.html) and are combined in a `sam` file to one score, which can be deconstructed back to the original flags using [online interpretation tools](https://broadinstitute.github.io/picard/explain-flags.html). In this pipeline, the bowtie2 parameters `--no-mixed` and `--no-discordant` prevent the mapping of only one read in a pair, so these flags will not be present. All flags reported in a `sam` file can optionally be viewed using  `grep -v ^@ <sample>.sam | cut -f 2 | sort | uniq`.
+
+**Multi-mapping:** the user should decide whether or not to retain reads which have multi-mapped, i.e. aligned to more than one position in the reference genome. When using paired-end data, it may be the case that one read aligns to a repetitive region (and therefore can map elsewhere), while the mate aligns to a unique sequence with a high quality. The bowtie2 parameters used above required reads to align within 50-700bp, so there should be no reads incorrectly aligned outside this distance. As such, the user may decide to keep multi-mapping reads on the assumption that they are likely to be mapped to the correct sequence, within the length of the DNA fragment. This may, however, cause incorrect alignments in extended repetitive regions where a read could map to multiple positions within the length of the DNA fragment. This should be minimised by the downstream removal of the [ENCODE Blacklisted regions](https://www.nature.com/articles/s41598-019-45839-z). 
+
+If a read is multi-mapped, it is assigned a low quality score by bowtie2. To view how many fragments align with a quality score >30, run:
+
+```
+samtools view -q 30 -c <sample>.rmChrM.bam
+```
+
+This reports the number of DNA reads which align with a quality score >30 (to calculate the number of DNA fragments, divide the output by 2). A low % of uniquely mapped reads may potentially be observed when carrying out a CUT&Tag experiment for a protein which is expected to bind repetitive DNA. Alternatively, this may result from short reads, excessive PCR amplification or problems with the PCR (Bailey et al. 2013). Run the following code to remove reads with a score <30:
+
+To ***retain*** multi-mapped reads:
+
+
+To ***remove*** multi-mapped reads:
+
+```
+samtools view -h -b -f 2 -F 1024 -q 30 <sample>.rmChrM.bam > <sample>.filtered.bam
+```
+
+```
+samtools fixmate 
+```
+
+#### Remove ENCODE blacklisted regions 
+
+
+#### QC
+To assess the total number of DNA fragments aligned following these QC steps, 
 
 samtools view`.
 Remove PCR duplicated using `samtools rmdup`
 Plot fragment size using `ATACseqQC`
 
 ### Assess fragment size distribution
+
+The fragment size is expected to show a periodicity of 150/200 bp, reflecting the length of DNA surrounding nucleosomes, since the tagmentation typically cuts DNA in between nucleosomes.
 
 The QC tool [ATACseqQC](https://www.bioconductor.org/packages/release/bioc/html/ATACseqQC.html) can be used to assess the distribution of fragments. For ATAC-seq data, fragments size should correspond to the size of nucleosomes (150/200bp) and to <100bp in nculeosome-free regions. 
 
