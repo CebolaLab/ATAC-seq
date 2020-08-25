@@ -170,12 +170,22 @@ The fragment size is expected to show a periodicity of 150/200 bp, reflecting th
 
 - Estimate library complexity
 - Fragment size distribution 
+- GC bias
 - Nucleosome positioning 
 - Plot footprints
 - Plot correlations between samples
 
+An important step with ATAC-seq data is to shift reads +4bp and -5bp for positive and negative strands, due to the 9bp duplication introducted through the repair of the Tn5 transposase nick.
+
+```
+picard CollectInsertSizeMetrics
+```
 
 ## Peak calling  
+
+Peaks are identified where sequenced reads accumulate. These correspond to regions of accessible DNA. 
+
+Important considerations for ATAC-seq: there are usually no controls; the Tn5 transposase has a binding preference, resulting in a GC bias which should be corrected for during peak calling; repair of the transposase-induced nick introduces a 9bp insertion which should be corrected for. [Yan et al. (2020)](https://genomebiology.biomedcentral.com/track/pdf/10.1186/s13059-020-1929-3) recommend using the peak caller HMMRATAC, developed by [Tarbell et al. (2019)](https://academic.oup.com/nar/article/47/16/e91/5519166), which is specifically developed for ATAC-seq data (if computational resources are sufficient). Alternatively, MACS2 is a popular peak caller. 
 
 
 ```
