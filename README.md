@@ -58,25 +58,59 @@ The output of fastp includes a html report, part of which is shown below. This p
 
 The processed reads should then be aligned to the reference human genome using an aligner such as [bowtie2](http://bowtie-bio.sourceforge.net/bowtie2/index.shtml). This pipeline will use bowtie2 to align reads to the hg19 reference genome. If the user is aligning to the more recent GRCh38 release, it is recommended to remove alternative contigs, otherwise reads may not map uniquely and will be assigned a low quality score. Suggested guidelines for preparing the GRCh38 genome are discussed in [this tutorial](https://www.biostars.org/p/342482/). If the user selects an alternative alignment tool, such as bwa, they are referred to [this blog post](https://www.acgt.me/?offset=1426809676847) which discusses the resulting differences in alignment quality scores.
 
-### Bowtie2 alignment
+#### Bowtie2 alignment
 
-The `local` parameter is used to 'soft clip' the end of reads to allow the best possible alignment, including any remaining adapter sequences (e.g. 1 or 2bp).  By using the `--no-mixed` and `--no-discordant` parameters, reads will only be aligned if both reads align successfully as a pair (this avoids the need to later remove reads which are not properly paired, which is a common post-alignment QC step). The -I 50 and -X 700 require fragments to be greater than 50bp and less than 700bp. The user can adjust these depending on the experiment/sequencing protocol (see the fastp html report for a plot of the estimated insert sizes). Here, 50 is specified as the minimum fragment length since fastp removed any DNA reads of <50 in the previous fastp step. 
+The `local` parameter is used to 'soft clip' the end of reads to allow the best possible alignment, including any remaining adapter sequences (e.g. 1 or 2bp).  By using the `--no-mixed` and `--no-discordant` parameters, reads will only be aligned if both reads align successfully as a pair (this avoids the need to later remove reads which are not properly paired, which is a common post-alignment QC step). The `-I 50` and `-X 700` require fragments to be greater than 50bp and less than 700bp. The user can adjust these depending on the experiment/sequencing protocol (see the fastp html report for a plot of the estimated insert sizes). Here, 50 is specified as the minimum fragment length since fastp removed any DNA reads of <50 in the previous fastp step. 
 
-The variable bt2idx can be set to set to the path where the reference genome and bowtie2 index files are stored. Bowtie2 can be used to create the index files (see the [manual](http://bowtie-bio.sourceforge.net/bowtie2/manual.shtml#indexing-a-reference-genome)). For users with access to the Imperial College HPC and Cebola Lab project space, the reference genomes are located at `/rds/general/user/hm1412/projects/cebolalab_liver_regulomes/live/reference-genomes/`. 
+The variable bt2idx can be set to set to the path where the reference genome and bowtie2 index files are stored. Bowtie2 can be used to create the index files (see the [manual](http://bowtie-bio.sourceforge.net/bowtie2/manual.shtml#indexing-a-reference-genome)). For users with access to the Imperial College HPC and Cebola Lab project space, the reference genomes are located at: `/rds/general/user/hm1412/projects/cebolalab_liver_regulomes/live/reference-genomes`. The below code should be edited to direct bt2idx to where your reference genome is stored:
 
 ```
-bt2idx=$(/path/to/reference/genome)
+bt2idx=/rds/general/user/hm1412/projects/cebolalab_liver_regulomes/live/reference-genomes
 
 bowtie2 --local --very-sensitive --no-mixed --no-discordant -I 50 -X 700 -x $bt2idx/hg19.masked -1 <sample>_1.paired.fastq.gz -2 <sample>_2.paired.fastq.gz) 2> <sample>.bowtie2 | samtools view -bS - > <sample>_aligned_reads.bam
 ```
 
+The output `bam` file should be sorted and indexed prior to the downstream analysis:
+
+```
+picard SortSam I=<sample>_aligned_reads.bam O=<sample>_sorted.bam SO=coordinate CREATE_INDEX=TRUE
+```
+
 ## Post-alignment QC
 
-Remove reads aligned to the mitochondria or the ENCODE blacklisted regions, as well as reads with a low mapping quality, those which are inproperly paired and duplicate reads.
+The post-alignment QC steps involve several steps:
 
-The number of uniquely mapped reads after these steps is recommended to be 25 million of 50 million paired-end reads
+- [Remove mitochondrial reads](#remove-mitochondrial-reads)
+- Remove low-quality alignments (including non-uniquely mapped reads)
+- Remove duplicates
+- Remove ENCODE blacklisted regions
 
-Specific to ATAC-seq, an additional QC step is to check the fragment size distribution, which is expected to correspond to the 
+For an ATAC-seq experiment, the number of uniquely mapped reads *after these steps* is recommended to be 25 million of 50 million paired-end reads. Specific to ATAC-seq, an additional QC step is to check the fragment size distribution, which is expected to correspond to the length of nucleosomes 
+
+- Assess fragment size distribution 
+
+#### Remove mitochondrial reads
+
+To assess the total % of mitochondrial reads, `samtools idxstats` can be run to report the total number of reads mapping to each chromosome. `samtools flagstat` provides a short report including the total number of DNA fragments. 
+
+```
+samtools idxstats <sample>_sorted.bam > <sample>_sorted.idxstats
+
+samtools flagstat <sample>_sorted.bam > <sample>_sorted.flagstat
+
+grep "chrM" <sample>_sorted.idxstats
+
+head <sample>_sorted.flagstat
+```
+
+To remove any mitocondrial DNA, run the following:
+
+```
+samtools view -h <sample>-sorted.bam | grep -v chrM | samtools sort -O bam -o <sample>.rmChrM.bam -T .
+```
+
+#### Remove duplicates
+
 
 samtools view`.
 Remove PCR duplicated using `samtools rmdup`
