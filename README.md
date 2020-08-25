@@ -82,7 +82,7 @@ The post-alignment QC steps involve several steps:
 
 - [Remove mitochondrial reads](#remove-mitochondrial-reads)
 - [Remove duplicates & low-quality alignments](#remove-duplicates-&-low-quality-alignments) (including non-uniquely mapped reads)
-- [Calculate library complexity](#calculate-library-complexity)
+- [Calculate library complexity and QC](#calculate-library-complexity-and-QC)
 
 For an ATAC-seq experiment, the number of uniquely mapped reads *after these steps* is recommended to be 25 million of 50 million paired-end reads. Specific to ATAC-seq, an additional QC step is to check the fragment size distribution, which is expected to correspond to the length of nucleosomes:
 
@@ -164,25 +164,15 @@ samtools index <sample>.filtered.bam
 bedtools intersect -nonamecheck -v -abam <sample>.filtered.bam -b ${BLACKLIST} > <sample>.blacklist-filtered.bam'
 ```
 
-#### Assess fragment size distribution
+#### Assess fragment size distribution and QC
 
-The fragment size is expected to show a periodicity of 150/200 bp, reflecting the length of DNA surrounding nucleosomes, since the tagmentation typically cuts DNA in between nucleosomes. The `R` tool [ATACseqQC](https://www.bioconductor.org/packages/release/bioc/html/ATACseqQC.html) can be used to assess the distribution of fragments. Fragments sizes may also be <100bp, corresponding to nucleosome-free regions or cutting of linker DNA, as well as fragments of and mono-, di-, and tri-nucleosomes (~200, 400 and 600bp, respectively) [(Yan et al. 2020)](https://genomebiology.biomedcentral.com/track/pdf/10.1186/s13059-020-1929-3). Fragments from nucleosome-free regions are expected to be enriched around transcription-start sites (TSS) and fragments from nucleosome-bound regions are depleted around TSS and maybe be slightly enriched in the flanking regions. The ATACseqQC manual is available [here](https://www.bioconductor.org/packages/release/bioc/vignettes/ATACseqQC/inst/doc/ATACseqQC.html). A guide to R ATACseqQC is reported in a [seperate markdown]
+The fragment size is expected to show a periodicity of 150/200 bp, reflecting the length of DNA surrounding nucleosomes, since the tagmentation typically cuts DNA in between nucleosomes. The `R` tool [ATACseqQC](https://www.bioconductor.org/packages/release/bioc/html/ATACseqQC.html) can be used to assess the distribution of fragments. Fragments sizes may also be <100bp, corresponding to nucleosome-free regions or cutting of linker DNA, as well as fragments of and mono-, di-, and tri-nucleosomes (~200, 400 and 600bp, respectively) [(Yan et al. 2020)](https://genomebiology.biomedcentral.com/track/pdf/10.1186/s13059-020-1929-3). Fragments from nucleosome-free regions are expected to be enriched around transcription-start sites (TSS) and fragments from nucleosome-bound regions are depleted around TSS and maybe be slightly enriched in the flanking regions. The ATACseqQC manual is available [here](https://www.bioconductor.org/packages/release/bioc/vignettes/ATACseqQC/inst/doc/ATACseqQC.html). A guide to R ATACseqQC is reported in a [seperate markdown] and covers:
 
-```{r}
-##R script
-if (!requireNamespace("BiocManager", quietly = TRUE))
-    install.packages("BiocManager")
-library(BiocManager)
-
-##Install ATACseqQC and it's dependencies
-BiocManager::install(c("ATACseqQC", "ChIPpeakAnno", "MotifDb", "GenomicAlignments",
-           "BSgenome.Hsapiens.UCSC.hg19", "TxDb.Hsapiens.UCSC.hg19.knownGene",
-           "phastCons100way.UCSC.hg19"))
-
-##Load the library
-library(ATACseqQC)
-
-```
+- Estimate library complexity
+- Fragment size distribution 
+- Nucleosome positioning 
+- Plot footprints
+- Plot correlations between samples
 
 
 ## Peak calling  
