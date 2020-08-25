@@ -50,19 +50,9 @@ Adapters and low quality reads/bases can be trimmed using one of several program
 fastp -i <sample>_R1.fastq.gz -O <sample>_R1.trimmed.fastq.g -I <sample>_R2.fastq.gz -O <sample>_R2.trimmed.fastq.gz --detect_adapter_for_pe -l 50 -j <sample>.fastp.json -h <sample>.fastp.html
 ```
 
+fastp outputs a html report. The information includes the total number of reads before and after filtering, including the % of high quality (Q30) bases. As seen below, the report also shows the main causes of read removal. In the example below, 57.97% of reads were removed because they were too short. The minimum read length is specified by the user as the -l argument in the above command.   
+
 <img src="https://github.com/CebolaLab/ATAC-seq/blob/master/Figures/fastp-html.png" width="600">
-
-The user should specify whether the raw data is encoded in phred+33 or phred+63 (read more [here](https://sequencing.qcfail.com/articles/incorrect-encoding-of-phred-scores/)). Most data should be encoded in the standardised phred+33. This can be confirmed using the fastQC report generated previously: the 'Encoding' field should read Sanger / Illumina 1.9 as below: 
-
-<img src="https://github.com/CebolaLab/ATAC-seq/blob/master/Figures/fastqc1.png" width="500">
-
-The phred encoding is specified when using trimmomatics to trim adapters. In the following example, the Nextera transposase adapter sequences are saved in the file `nextera-adapters.fa`. Other Illumina adapters sequences can be found [here](https://dnatech.genomecenter.ucdavis.edu/wp-content/uploads/2013/06/illumina-adapter-sequences_1000000002694-00.pdf).
-
-`trimmomatic PE -phred33 -trimlog <sample>.trimLogFile <sample>_R1.fastq.gz <sample>_R2.fastq.gz <sample>_R1_trimmed_paired.fastq.gz <sample>_R1_trimmed_unpaired.fastq.gz <sample>_R2_trimmed_paired.fastq.gz <sample>_R2_trimmed_unpaired.fastq.gz ILLUMINACLIP:nextera-adapters.fa:2:30:10:2:keepBothReads LEADING:3 TRAILING:3 MINLEN:36`
-
-A QC report can be generated following trimming to compare the quality before and after trimming.
-
-`fastqc <sample>_1_trimmed.fastq.gz -d . -o .`  
 
 ## Alignment
 
