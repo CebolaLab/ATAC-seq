@@ -152,29 +152,47 @@ To ***remove*** multi-mapped reads:
 samtools view -h -b -f 2 -F 1024 -F 12 -F 512 -q 30 <sample>.rmChrM.bam | samtools sort -n <sample>.filtered.bam
 ```
 
+The output `bam` file, which is now sorted by name, should be indexed: 
+
 ```
 samtools index <sample>.filtered.bam
 ```
 
-#### Calculate library complexity
+#### Remove ENCODE black-list regions 
 
-#### QC
-To assess the total number of DNA fragments aligned following these QC steps, 
+```
+bedtools intersect -nonamecheck -v -abam <sample>.filtered.bam -b ${BLACKLIST} > <sample>.blacklist-filtered.bam'
+```
 
-samtools view`.
-Remove PCR duplicated using `samtools rmdup`
-Plot fragment size using `ATACseqQC`
+#### Assess fragment size distribution
 
-### Assess fragment size distribution
+The fragment size is expected to show a periodicity of 150/200 bp, reflecting the length of DNA surrounding nucleosomes, since the tagmentation typically cuts DNA in between nucleosomes. The `R` tool [ATACseqQC](https://www.bioconductor.org/packages/release/bioc/html/ATACseqQC.html) can be used to assess the distribution of fragments. Fragments sizes may also be <100bp, corresponding to nucleosome-free regions or cutting of linker DNA, as well as fragments of and mono-, di-, and tri-nucleosomes (~200, 400 and 600bp, respectively) [(Yan et al. 2020)](https://genomebiology.biomedcentral.com/track/pdf/10.1186/s13059-020-1929-3). Fragments from nucleosome-free regions are expected to be enriched around transcription-start sites (TSS) and fragments from nucleosome-bound regions are depleted around TSS and maybe be slightly enriched in the flanking regions. The ATACseqQC manual is available [here](https://www.bioconductor.org/packages/release/bioc/vignettes/ATACseqQC/inst/doc/ATACseqQC.html).
 
-The fragment size is expected to show a periodicity of 150/200 bp, reflecting the length of DNA surrounding nucleosomes, since the tagmentation typically cuts DNA in between nucleosomes.
+In R: 
 
-The QC tool [ATACseqQC](https://www.bioconductor.org/packages/release/bioc/html/ATACseqQC.html) can be used to assess the distribution of fragments. For ATAC-seq data, fragments size should correspond to the size of nucleosomes (150/200bp) and to <100bp in nculeosome-free regions. 
+```
+##R script
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+library(BiocManager)
+##Install ATACseqQC and it's dependencies
+BiocManager::install(c("ATACseqQC", "ChIPpeakAnno", "MotifDb", "GenomicAlignments",
+           "BSgenome.Hsapiens.UCSC.hg19", "TxDb.Hsapiens.UCSC.hg19.knownGene",
+           "phastCons100way.UCSC.hg19"))
 
-nucleosome-free regions (NFR), with fragments of <100bp, and mono-, di-, and tri-nucleosomes (~200, 400 and 600bp, respectively) [(Yan et al. 2020)](https://genomebiology.biomedcentral.com/track/pdf/10.1186/s13059-020-1929-3). Fragments are expected to be enriched around transcription-start sites (TSS) (corresponding to NFRs) and fragments from nucleosome-bound regions are depleted around TSS and maybe be slightly enriched in the flanking regions. 
+##Load the library
+library(ATACseqQC)
 
- periodicity of 150/200 bp (nucleosome size),
+```
 
-To account for the 9bp duplication created by the Tn5 transposase, reads should be shifted +4bp for the positive strand and -5bp for the negative strand. 
 
 ## Peak calling  
+
+
+```
+bedtools bamtobed -bedpe -i <sample>.filtered.bam | awk 'BEGIN{OFS="\t"}{print $1,$2,$4,$6,$9,$10}' | grep -v 'chrM' | sort | uni\
+q -c | awk 'BEGIN{mt=0;m0=0;m1=0;m2=0} ($1==1){m1=m1+1} ($1==2){m2=m2+1} {m0=m0+1} {mt=mt+$1} END{printf "%d\t%d\t%d\t%d\t%f\t%f\\
+t%f\n",mt,m0,m1,m2,m0/mt,m1/m0,m1/m2}' > ${PBC_FILE_QC}
+rm ${OFPREFIX}.srt.tmp.bam
+
+```
