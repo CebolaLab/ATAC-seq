@@ -170,11 +170,12 @@ The fragment size is expected to show a periodicity of 150/200 bp, reflecting th
 
 In R: 
 
-```
+```{r}
 ##R script
 if (!requireNamespace("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
 library(BiocManager)
+
 ##Install ATACseqQC and it's dependencies
 BiocManager::install(c("ATACseqQC", "ChIPpeakAnno", "MotifDb", "GenomicAlignments",
            "BSgenome.Hsapiens.UCSC.hg19", "TxDb.Hsapiens.UCSC.hg19.knownGene",
