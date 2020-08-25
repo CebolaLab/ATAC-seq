@@ -81,13 +81,13 @@ picard SortSam I=<sample>_aligned_reads.bam O=<sample>_sorted.bam SO=coordinate 
 The post-alignment QC steps involve several steps:
 
 - [Remove mitochondrial reads](#remove-mitochondrial-reads)
-- Remove low-quality alignments (including non-uniquely mapped reads)
-- Remove duplicates
+- [Remove low-quality alignments](#remove-low-quality-alignments) (including non-uniquely mapped reads)
+- [Remove duplicates](#remove-duplicates)
 - Remove ENCODE blacklisted regions
 
 For an ATAC-seq experiment, the number of uniquely mapped reads *after these steps* is recommended to be 25 million of 50 million paired-end reads. Specific to ATAC-seq, an additional QC step is to check the fragment size distribution, which is expected to correspond to the length of nucleosomes 
 
-- Assess fragment size distribution 
+- [Assess fragment size distribution](#assess-fragment-size-distribution)
 
 #### Remove mitochondrial reads
 
@@ -96,18 +96,24 @@ To assess the total % of mitochondrial reads, `samtools idxstats` can be run to 
 ```
 samtools idxstats <sample>_sorted.bam > <sample>_sorted.idxstats
 
-samtools flagstat <sample>_sorted.bam > <sample>_sorted.flagstat
-
 grep "chrM" <sample>_sorted.idxstats
+```
+
+To see the total number of DNA fragments, run:
+
+```
+samtools flagstat <sample>_sorted.bam > <sample>_sorted.flagstat
 
 head <sample>_sorted.flagstat
 ```
 
-To remove any mitocondrial DNA, run the following:
+The % of DNA fragments aligned to chrM can be calculated as a % of the total DNA fragments. To remove any mitocondrial DNA, run the following:
 
 ```
 samtools view -h <sample>-sorted.bam | grep -v chrM | samtools sort -O bam -o <sample>.rmChrM.bam -T .
 ```
+
+#### Remove low-quality alignments 
 
 #### Remove duplicates
 
@@ -116,7 +122,7 @@ samtools view`.
 Remove PCR duplicated using `samtools rmdup`
 Plot fragment size using `ATACseqQC`
 
-### ATAC-seq QC 
+### Assess fragment size distribution
 
 The QC tool [ATACseqQC](https://www.bioconductor.org/packages/release/bioc/html/ATACseqQC.html) can be used to assess the distribution of fragments. For ATAC-seq data, fragments size should correspond to the size of nucleosomes (150/200bp) and to <100bp in nculeosome-free regions. 
 
