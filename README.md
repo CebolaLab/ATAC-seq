@@ -9,23 +9,26 @@ The following pipeline will describe the step-by-step analysis of ATAC-seq data 
 - https://yiweiniu.github.io/blog/2019/03/ATAC-seq-data-analysis-from-FASTQ-to-peaks/ A similar github page presenting an ATAC-seq pipeline 
 - https://galaxyproject.github.io/training-material/topics/epigenetics/tutorials/atac-seq/tutorial.html
 
-An excellent recent review on the ATAC-seq analysis pipeline is reported by [(Yan et al. 2020)](https://genomebiology.biomedcentral.com/track/pdf/10.1186/s13059-020-1929-3).
+An recent review on the ATAC-seq analysis pipeline is reported by [Yan et al. (2020)](https://genomebiology.biomedcentral.com/track/pdf/10.1186/s13059-020-1929-3).
 
 The following steps will be covered:
 
-- Sequencing quality control (QC) 
-- Alignment 
-- Peak Calling
-- Visualisation
+- [Pre-alignment quality control (QC)](#pre-alignment-qc) 
+- [Alignment](#alignment) 
+- [Post-alignment QC](#post-alignment-qc)
+- [Peak Calling](#peak-calling)
+- [Visualisation](#visualisation)
 - Functional analysis & Motif Discovery
 
 ## Pre-alignment QC
 
 Firstly, if the same sample has been sequenced on multiple lanes, concatenate the files:
 
-`cat  <sample>.lane1.R1.fastq.gz  <sample>.lane2.R1.fastq.gz  >  <sample>.R1.fastq.gz`
+```
+cat  <sample>.lane1.R1.fastq.gz  <sample>.lane2.R1.fastq.gz  >  <sample>.R1.fastq.gz
 
-`cat  <sample>.lane1.R2.fastq.gz  <sample>.lane2.R2.fastq.gz  >  <sample>.R2.fastq.gz`
+cat  <sample>.lane1.R2.fastq.gz  <sample>.lane2.R2.fastq.gz  >  <sample>.R2.fastq.gz
+```
 
 Independent replicates should be processed separately.
 
@@ -33,15 +36,23 @@ Independent replicates should be processed separately.
 
 The raw sequence data should first be assessed for quality. [FastQC reports](https://dnacore.missouri.edu/PDF/FastQC_Manual.pdf) can be generated for all samples to assess sequence quality, GC content, duplication rates, length distribution, K-mer content and adapter contamination. In ATAC-seq data, it is likely that Nextera sequencing adapters will be over-represented. As described by [(Yan et al. 2020)](https://genomebiology.biomedcentral.com/track/pdf/10.1186/s13059-020-1929-3), base quality should be high although may drop slightly at the 3' end, while GC content and read length should be consistent with the expected values. For paired-end reads, run fastqc on both files, with the results output to the current directory:
 
-`fastqc <sample>_1.fastq.gz -d . -o .`
+```
+fastqc <sample>_1.fastq.gz -d . -o .
 
-`fastqc <sample>_2.fastq.gz -d . -o .`
+fastqc <sample>_2.fastq.gz -d . -o .
+```
 
 ### Adapter trimming 
 
-Adapters and low quality reads/bases can be trimmed using one of several programs, such as [trimmomatic](http://www.usadellab.org/cms/?page=trimmomatic) or [cutadapt](https://cutadapt.readthedocs.io/en/stable/). For this pipeline, the user is advised to use cutadapt. 
+Adapters and low quality reads/bases can be trimmed using one of several programs, such as [trimmomatic](http://www.usadellab.org/cms/?page=trimmomatic), [cutadapt](https://cutadapt.readthedocs.io/en/stable/), or [fastp](https://github.com/OpenGene/fastp). For this pipeline, the user is advised to use fastp.
 
-The user should specific whether the raw data is encoded in phred+33 or phred+63 (read more [here](https://sequencing.qcfail.com/articles/incorrect-encoding-of-phred-scores/)). Most data should be encoded in the standardised phred+33. This can be confirmed using the fastQC report generated previously: the 'Encoding' field should read Sanger / Illumina 1.9 as below: 
+```
+fastp -i <sample>_R1.fastq.gz -O <sample>_R1.trimmed.fastq.g -I <sample>_R2.fastq.gz -O <sample>_R2.trimmed.fastq.gz --detect_adapter_for_pe -l 50 -j <sample>.fastp.json -h <sample>.fastp.html
+```
+
+<img src="https://github.com/CebolaLab/ATAC-seq/blob/master/Figures/fastp-html.png" width="500"
+
+The user should specify whether the raw data is encoded in phred+33 or phred+63 (read more [here](https://sequencing.qcfail.com/articles/incorrect-encoding-of-phred-scores/)). Most data should be encoded in the standardised phred+33. This can be confirmed using the fastQC report generated previously: the 'Encoding' field should read Sanger / Illumina 1.9 as below: 
 
 <img src="https://github.com/CebolaLab/ATAC-seq/blob/master/Figures/fastqc1.png" width="500">
 
@@ -55,7 +66,7 @@ A QC report can be generated following trimming to compare the quality before an
 
 ## Alignment
 
-The processed reads should then be aligned to the reference human genome using an aligner such as [bowtie2](http://bowtie-bio.sourceforge.net/bowtie2/index.shtml). This pipeline will use bowtie2 to align reads to the hg19 reference genome. If the user is aligning to the more recent GRCh38 release, it is recommended to remove alternative contigs, otherwise reads may not map uniquely and will consequently be assigned a low quality score. Suggested guidelines for preparing the GRCh38 genome are discussed in [this](https://www.biostars.org/p/342482/) tutorial. If the user selects an alternative tool for alignment, such as bwa, they are referred to [this blog post](https://www.acgt.me/?offset=1426809676847) which discusses the resulting difference in alignment quality scores (this may require adjustments in downstream steps).  
+The processed reads should then be aligned to the reference human genome using an aligner such as [bowtie2](http://bowtie-bio.sourceforge.net/bowtie2/index.shtml). This pipeline will use bowtie2 to align reads to the hg19 reference genome. If the user is aligning to the more recent GRCh38 release, it is recommended to remove alternative contigs, otherwise reads may not map uniquely and will consequently be assigned a low quality score. Suggested guidelines for preparing the GRCh38 genome are discussed in [this tutorial](https://www.biostars.org/p/342482/). If the user selects an alternative alignment tool, such as bwa, they are referred to [this blog post](https://www.acgt.me/?offset=1426809676847) which discusses the resulting difference in alignment quality scores (this may require an adjustment in downstream filtering).  
 
 The `local` parameter is used, since cutadapt removes adapter sequences >3bp; the `local` parameter 'soft clips' the end of reads to allow the best possible alignment, including any remaining adapter sequences (1 or 2bp).  By using the `--no-mixed` and `--no-discordant` parameters, reads will only be aligned if both reads align successfully as a pair (this avoids the need to later remove reads which are not properly paired, which is a common post-alignment QC step).
 
