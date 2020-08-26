@@ -48,15 +48,15 @@ Adapters and low quality reads/bases should be trimmed using one of several prog
 
 <img src="https://github.com/CebolaLab/ATAC-seq/blob/master/Figures/adapters.png" width="800">
 
-For this pipeline, the user is advised to use fastp to remove adapter sequences:
+For this pipeline, fastp is used to remove adapter sequences. The minimum fragment length is set at 35, since ATAC-seq fragments can be observed if the transposase cuts adjacent nucleosome-free DNA. 
 
 ```
-fastp -i <sample>_R1.fastq.gz -O <sample>_R1.trimmed.fastq.g -I <sample>_R2.fastq.gz -O <sample>_R2.trimmed.fastq.gz --detect_adapter_for_pe -l 50 -j <sample>.fastp.json -h <sample>.fastp.html
+fastp -i <sample>_R1.fastq.gz -O <sample>_R1.trimmed.fastq.g -I <sample>_R2.fastq.gz -O <sample>_R2.trimmed.fastq.gz --detect_adapter_for_pe -l 35 -j <sample>.fastp.json -h <sample>.fastp.html
 ```
 
-The output of fastp includes a html report, part of which is shown below. This presents the total number of reads before and after filtering, including the % of high quality (Q30) bases. The report also shows the main causes of read removal. In the example below, 57.97% of reads were removed because they were shorter than the minimum read length specified above by the -l argument.
+The output of fastp includes a html report, part of which is shown below. This presents the total number of reads before and after filtering, including the % of high quality (Q30) bases. The report also shows the main causes of read removal. In the example below, xx.xx% of reads were removed because they were shorter than the minimum read length specified above by the -l argument (35bp).
 
-<img src="https://github.com/CebolaLab/ATAC-seq/blob/master/Figures/fastp-html.png" width="600">
+<img src="https://github.com/CebolaLab/ATAC-seq/blob/master/Figures/fastp2.png" width="600">
 
 ## Alignment
 
