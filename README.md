@@ -46,7 +46,7 @@ fastqc <sample>_2.fastq.gz -d . -o .
 
 Adapters and low quality reads/bases should be trimmed using one of several programs, such as [trimmomatic](http://www.usadellab.org/cms/?page=trimmomatic), [cutadapt](https://cutadapt.readthedocs.io/en/stable/), or [fastp](https://github.com/OpenGene/fastp). Adapter contamination can be seen in the fastqc report:
 
-<img src="https://github.com/CebolaLab/ATAC-seq/blob/master/Figures/adapters.png" width="600">
+<img src="https://github.com/CebolaLab/ATAC-seq/blob/master/Figures/adapters.png" width="800">
 
 For this pipeline, the user is advised to use fastp to remove adapter sequences:
 
