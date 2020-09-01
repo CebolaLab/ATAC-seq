@@ -1,4 +1,6 @@
 # ATAC-seq
+## **UNDER CONSTRUCTION**
+
 [Cebola Lab](https://www.imperial.ac.uk/metabolism-digestion-reproduction/research/systems-medicine/genetics--genomics/regulatory-genomics-and-metabolic-disease/)
 
 Step-by-step analysis pipeline/tutorial for ATAC-seq data
@@ -198,9 +200,24 @@ samtools view -H <sample>.filtered.bam | perl -ne 'if(/^@SQ.*?SN:(\w+)\s+LN:(\d+
 java -jar HMMRATAC_V1.2.10_exe.jar -b <sample>.filtered.bam -i <sample>.filtered.bam.bai -g genome.info -o <sample>
 ```
 
+## Visualisation
+
+The QC-ed `bam` file can be converted to a `bedGraph` format to visualise sequencing trakcs using tools such as the UCSC browser or the integrative genomes browser. The ENCODE blacklist regions can be provided, to exclude them from the output:
+
+```
+bedtools bamCoverage --blackListFileName --normalizeUsing BPM -b <sample>.filtered.bam > <sample>.bedGraph
+```
+
+TmpScale=$(bc <<< "scale=6;1000000/$(samtools view -f 0 -c mybamfile.bam)")
+bedtools genomecov -ibam mybamfile.bam -bg -scale $TmpScale -g mm10.chrom.sizes > myBedGraphfile.BedGraph
+
+The `-bg` option can be replaced with `-bga` if the user wants the output file to contain regions with 0 coverage. 
+
 ## Additional analysis: motif calling
 
 An important step with ATAC-seq data is to shift reads +4bp and -5bp for positive and negative strands, due to the 9bp duplication introducted through the repair of the Tn5 transposase nick.
+
+A recent tool which can be used to assess motifs and transcription factor footprints is [TOBIAS](https://github.com/loosolab/TOBIAS).
 
 ```
 picard CollectInsertSizeMetrics
