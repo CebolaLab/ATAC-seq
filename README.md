@@ -41,9 +41,9 @@ Independent replicates should be processed separately.
 The raw sequence data should first be assessed for quality. [FastQC reports](https://dnacore.missouri.edu/PDF/FastQC_Manual.pdf) can be generated for all samples to assess sequence quality, GC content, duplication rates, length distribution, K-mer content and adapter contamination. In ATAC-seq data, it is likely that Nextera sequencing adapters will be over-represented. As described by [Yan et al. (2020)](https://genomebiology.biomedcentral.com/track/pdf/10.1186/s13059-020-1929-3), base quality should be high although may drop slightly at the 3' end, while GC content and read length should be consistent with the expected values. For paired-end reads, run fastqc on both files, with the results output to the current directory:
 
 ```
-fastqc <sample>_1.fastq.gz -d . -o .
+fastqc <sample>_R1.fastq.gz -d . -o .
 
-fastqc <sample>_2.fastq.gz -d . -o .
+fastqc <sample>_R2.fastq.gz -d . -o .
 ```
 
 ### Adapter trimming 
@@ -55,7 +55,7 @@ Adapters and low quality reads/bases should be trimmed using one of several prog
 For this pipeline, fastp is used to remove adapter sequences. The minimum fragment length is set at 35, since short ATAC-seq fragments can be observed if the transposase cuts adjacent nucleosome-free DNA. 
 
 ```bash
-fastp -i <sample>_R1.fastq.gz -O <sample>_R1.trimmed.fastq.g -I <sample>_R2.fastq.gz -O <sample>_R2.trimmed.fastq.gz --detect_adapter_for_pe -l 35 -j <sample>.fastp.json -h <sample>.fastp.html
+fastp -i <sample>_R1.fastq.gz -I <sample>_R2.fastq.gz -o <sample>_R1.trimmed.fastq.gz -O <sample>_R2.trimmed.fastq.gz --detect_adapter_for_pe -l 35 -j <sample>.fastp.json -h <sample>.fastp.html
 ```
 
 The output of fastp includes a html report, part of which is shown below. This presents the total number of reads before and after filtering, including the % of high quality (Q30) bases. The report also shows the main causes of read removal. In the example below, 1.9% of reads were removed because they were shorter than the minimum read length specified above by the -l argument (35bp).
@@ -88,14 +88,14 @@ Bowtie2 should be used to create the reference genome index files (see the bowti
 bt2idx=/path/to/reference-genome
 
 #Run the bowtie2 alignment and output a bam alignment file
-bowtie2 --local --very-sensitive --no-mixed --no-discordant -I 35 -X 700 -x $bt2idx/human_g1k_v37.fasta -1 <sample>_1.paired.fastq.gz -2 <sample>_2.paired.fastq.gz) 2> <sample>.bowtie2 | samtools view -bS - > <sample>_aligned_reads.bam
+bowtie2 --local --very-sensitive --no-mixed --no-discordant -I 35 -X 700 -x $bt2idx/human_g1k_v37.fasta -1 <sample>_R1.trimmed.fastq.gz -2 <sample>_R2.trimmed.fastq.gz) 2> <sample>.bowtie2 | samtools view -bS - > <sample>.bam
 ```
 
 The output `bam` file should be sorted and indexed prior to the downstream analysis:
 
 ```bash
 #Sort the output bam file by coordinate
-picard SortSam I=<sample>_aligned_reads.bam O=<sample>_sorted.bam SO=coordinate CREATE_INDEX=TRUE
+picard SortSam I=<sample>.bam O=<sample>_sorted.bam SO=coordinate CREATE_INDEX=TRUE
 ```
 
 ## Post-alignment QC
@@ -105,24 +105,28 @@ The post-alignment QC steps involve several steps:
 - [Remove mitochondrial reads](#remove-mitochondrial-reads)
 - [Remove duplicates & low-quality alignments](#remove-duplicates-&-low-quality-alignments) (including non-uniquely mapped reads)
 - [Calculate library complexity and QC](#calculate-library-complexity-and-QC)
+- [Remove ENCODE black-list regions](#remove-encode-black-list-regions)
 
-For an ATAC-seq experiment, the number of uniquely mapped reads *after these steps* is recommended to be 25 million of 50 million paired-end reads. Specific to ATAC-seq, an additional QC step is to check the fragment size distribution, which is expected to correspond to the length of nucleosomes:
+For an ATAC-seq experiment, the number of uniquely mapped reads ***after these steps*** is recommended to be 25 million of 50 million paired-end reads [(Buenrostro et al. 2015)](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4374986/). Specific to ATAC-seq, an additional QC step is to check the fragment size distribution, which is expected to correspond to the length of nucleosomes:
 
 - [Assess fragment size distribution](#assess-fragment-size-distribution)
 
-#### Remove mitochondrial reads
+### Remove mitochondrial reads
 
-To assess the total % of mitochondrial reads, `samtools idxstats` can be run to report the total number of reads mapping to each chromosome. `samtools flagstat` provides a short report including the total number of DNA fragments. 
+ATAC-seq experiments commonly include a high proportion of mitochondrial reads. These should be removed. To assess the total % of mitochondrial reads, `samtools idxstats` can be run to report the total number of reads mapping to each chromosome. `samtools flagstat` provides a short report including the total number of DNA fragments. 
 
-```
+```bash
+#Generate the idxstats report
 samtools idxstats <sample>_sorted.bam > <sample>_sorted.idxstats
 
+#Check the number of reads mapped to the mitochondria (chrM)
 grep "chrM" <sample>_sorted.idxstats
 ```
 
 The second column is the length of the chromosome and the third column is the total number of reads aligned to the chromosome (chrM). To see the total number of DNA fragments, run:
 
-```
+```bash
+#Generate the flagstat report
 samtools flagstat <sample>_sorted.bam > <sample>_sorted.flagstat
 
 head <sample>_sorted.flagstat
@@ -130,25 +134,26 @@ head <sample>_sorted.flagstat
 
 The % of DNA fragments aligned to chrM can be calculated as a % of the total DNA fragments. To remove any mitocondrial DNA, run the following:
 
-```
+```bash
+#Remove reads aligned to the mitochondria
 samtools view -h <sample>-sorted.bam | grep -v chrM | samtools sort -O bam -o <sample>.rmChrM.bam -T .
 ```
 
-#### Mark duplicates 
+### Mark duplicates 
 
 To mark duplicate reads:
 
-```
+```bash
 picard MarkDuplicates QUIET=true INPUT=<sample>.rmChrM.bam OUTPUT=<sample>.marked.bam METRICS_FILE=<sample>.dup.metrics REMOVE_DUPLICATES=false CREATE_INDEX=true VALIDATION_STRINGENCY=LENIENT TMP_DIR=.
 ```
 
 The % of duplicates can be viewed using:
 
-```
+```bash
 head -n 8 <sample>.dup.metrics | cut -f 7,9 | grep -v ^# | tail -n 2
 ```
 
-#### Remove duplicates & low-quality alignments 
+### Remove duplicates & low-quality alignments 
 
 The output `sam/bam` files contain several measures of quality. First, the alignment quality score. Reads which are uniquely mapped are assigned a high alignment quality score and one genomic position. If reads can map to more than one location, Bowtie2 reports one position and assigns a low quality score. The proportion of uniquely mapped reads can be assessed. In general, >70% uniquely mapped reads is expected, while <50% may be a cause for concern [(Bailey et al. 2013)](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3828144/pdf/pcbi.1003326.pdf). Secondly, the 'flag' reports information such as whether the read is mapped as a pair or is a PCR duplicate. The individual flags are reported [here](https://hbctraining.github.io/Intro-to-rnaseq-hpc-O2/lessons/04_alignment_quality.html) and are combined in a `sam/bam` file to one score, which can be deconstructed back to the original flags using [online interpretation tools](https://broadinstitute.github.io/picard/explain-flags.html). In this pipeline, the bowtie2 parameters `--no-mixed` and `--no-discordant` prevent the mapping of only one read in a pair, so these flags will not be present. All flags reported in a `sam` file can optionally be viewed using  `grep -v ^@ <sample>.sam | cut -f 2 | sort | uniq`.
 
@@ -156,7 +161,7 @@ The output `sam/bam` files contain several measures of quality. First, the align
 
 If a read is multi-mapped, it is assigned a low quality score by bowtie2. To view how many DNA reads which align with a quality score >30, run (divide this number by 2 to calculate the # of DNA fragments):
 
-```
+```bash
 samtools view -q 30 -c <sample>.marked.bam
 ```
 
@@ -164,31 +169,32 @@ A low % of uniquely mapped reads map result from short reads, excessive PCR ampl
 
 To ***retain*** multi-mapped reads:
 
-```
+```bash
 samtools view -h -b -f 2 -F 1548 <sample>.rmChrM.bam | samtools sort -n <sample>.filtered.bam 
 ```
 
 To ***remove*** multi-mapped reads:
 
-```
+```bash
 samtools view -h -b -f 2 -F 1548 -q 30 <sample>.rmChrM.bam | samtools sort -n <sample>.filtered.bam
 ```
 
 The output `bam` file, which is now sorted by name, should be indexed: 
 
-```
+```bash
 samtools index <sample>.filtered.bam
 ```
 
-#### Remove ENCODE black-list regions 
+### Remove ENCODE black-list regions 
 
-```
-bedtools intersect -nonamecheck -v -abam <sample>.filtered.bam -b ${BLACKLIST} > <sample>.blacklist-filtered.bam'
+```bash
+bedtools intersect -nonamecheck -v -abam <sample>.filtered.bam -b ${BLACKLIST} > <sample>.blacklist-filtered.bam
 ```
 
-#### Assess fragment size distribution and QC
+### Assess fragment size distribution and QC
 
 The fragment size is expected to show a periodicity of 150/200 bp, reflecting the length of DNA surrounding nucleosomes, since the tagmentation typically cuts DNA in between nucleosomes. The `R` tool [ATACseqQC](https://www.bioconductor.org/packages/release/bioc/html/ATACseqQC.html) can be used to assess the distribution of fragments. Fragments sizes may also be <100bp, corresponding to nucleosome-free regions or cutting of linker DNA, as well as fragments of and mono-, di-, and tri-nucleosomes (~200, 400 and 600bp, respectively) [(Yan et al. 2020)](https://genomebiology.biomedcentral.com/track/pdf/10.1186/s13059-020-1929-3). Fragments from nucleosome-free regions are expected to be enriched around transcription-start sites (TSS) and fragments from nucleosome-bound regions are depleted around TSS and maybe be slightly enriched in the flanking regions. The ATACseqQC manual is available [here](https://www.bioconductor.org/packages/release/bioc/vignettes/ATACseqQC/inst/doc/ATACseqQC.html). A guide to R ATACseqQC is reported in a [seperate markdown] and covers:
+
 
 - Estimate library complexity
 - Fragment size distribution 
@@ -208,7 +214,7 @@ HMMRATAC is available on [github](https://github.com/LiuLabUB/HMMRATAC).
 
 The input file should be sorted by coordinate and indexed.
 
-```
+```bash
 samtools view -H <sample>.filtered.bam | perl -ne 'if(/^@SQ.*?SN:(\w+)\s+LN:(\d+)/){print $1,"\t",$2,"\n"}' > genome.info
 
 java -jar HMMRATAC_V1.2.10_exe.jar -b <sample>.filtered.bam -i <sample>.filtered.bam.bai -g genome.info -o <sample>
@@ -218,7 +224,7 @@ java -jar HMMRATAC_V1.2.10_exe.jar -b <sample>.filtered.bam -i <sample>.filtered
 
 The QC-ed `bam` file can be converted to a `bedGraph` format to visualise sequencing trakcs using tools such as the UCSC browser or the integrative genomes browser. The ENCODE blacklist regions can be provided, to exclude them from the output:
 
-```
+```bash
 bedtools bamCoverage --blackListFileName --normalizeUsing BPM -b <sample>.filtered.bam > <sample>.bedGraph
 ```
 
@@ -233,7 +239,7 @@ An important step with ATAC-seq data is to shift reads +4bp and -5bp for positiv
 
 A recent tool which can be used to assess motifs and transcription factor footprints is [TOBIAS](https://github.com/loosolab/TOBIAS).
 
-```
+```bash
 picard CollectInsertSizeMetrics
 ```
 
