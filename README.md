@@ -54,7 +54,7 @@ Adapters and low quality reads/bases should be trimmed using one of several prog
 
 For this pipeline, fastp is used to remove adapter sequences. The minimum fragment length is set at 35, since short ATAC-seq fragments can be observed if the transposase cuts adjacent nucleosome-free DNA. 
 
-```
+```bash
 fastp -i <sample>_R1.fastq.gz -O <sample>_R1.trimmed.fastq.g -I <sample>_R2.fastq.gz -O <sample>_R2.trimmed.fastq.gz --detect_adapter_for_pe -l 35 -j <sample>.fastp.json -h <sample>.fastp.html
 ```
 
@@ -70,17 +70,20 @@ The processed reads should then be aligned to the reference human genome using a
 
 The `local` parameter is used to 'soft clip' the end of reads to allow the best possible alignment, including any remaining adapter sequences (e.g. 1 or 2bp).  By using the `--no-mixed` and `--no-discordant` parameters, reads will only be aligned if both reads align successfully as a pair (this avoids the need to later remove reads which are not properly paired, which is a common post-alignment QC step). The `-I 35` and `-X 700` require fragments to be greater than 35bp and less than 700bp. The user can adjust these depending on the experiment/sequencing protocol (see the fastp html report for a plot of the estimated insert sizes). The maximum fragment length of 700bp prevents reads from aligning incorrectly outside the expected fragment range. 
 
-The variable `bt2idx` can be set to set to the path where the reference genome and bowtie2 index files are stored. Bowtie2 can be used to create the index files (see the bowtie2 [manual](http://bowtie-bio.sourceforge.net/bowtie2/manual.shtml#indexing-a-reference-genome)). For users with access to the Imperial College HPC and Cebola Lab project space, the reference genomes are located at: `/rds/general/user/hm1412/projects/cebolalab_liver_regulomes/live/reference-genomes`. The below code should be edited to direct `bt2idx` to where your reference genome is stored:
+Bowtie2 should be used to create the reference genome index files (see the bowtie2 [manual](http://bowtie-bio.sourceforge.net/bowtie2/manual.shtml#indexing-a-reference-genome)).  
 
-```
+```bash
+#set the bt2idx variable to the directory with the reference genome and indexes
 bt2idx=/rds/general/user/hm1412/projects/cebolalab_liver_regulomes/live/reference-genomes
 
+#Run the bowtie2 alignment and output a bam alignment file
 bowtie2 --local --very-sensitive --no-mixed --no-discordant -I 35 -X 700 -x $bt2idx/hg19.masked -1 <sample>_1.paired.fastq.gz -2 <sample>_2.paired.fastq.gz) 2> <sample>.bowtie2 | samtools view -bS - > <sample>_aligned_reads.bam
 ```
 
 The output `bam` file should be sorted and indexed prior to the downstream analysis:
 
-```
+```bash
+#Sort the output bam file by coordinate
 picard SortSam I=<sample>_aligned_reads.bam O=<sample>_sorted.bam SO=coordinate CREATE_INDEX=TRUE
 ```
 
