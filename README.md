@@ -12,6 +12,7 @@ The following pipeline will describe the step-by-step analysis of ATAC-seq data 
 - https://github.com/harvardinformatics/ATAC-seq An ATAC-seq pipeline from Harvard Informatics 
 - https://yiweiniu.github.io/blog/2019/03/ATAC-seq-data-analysis-from-FASTQ-to-peaks/ A similar github page presenting an ATAC-seq pipeline 
 - https://galaxyproject.github.io/training-material/topics/epigenetics/tutorials/atac-seq/tutorial.html
+- Standardized ENCODE pipeline devides by Kundaje et al. https://libraries.io/github/kundajelab/atac_dnase_pipelines
 
 An recent review on the ATAC-seq analysis pipeline is reported by [Yan et al. (2020)](https://genomebiology.biomedcentral.com/track/pdf/10.1186/s13059-020-1929-3).
 
@@ -19,8 +20,9 @@ The following steps will be covered:
 
 - [Pre-alignment quality control (QC)](#pre-alignment-qc) 
 - [Alignment](#alignment) 
-- [Post-alignment QC](#post-alignment-qc)
+- [Post-alignment QC](#post-alignment-qc) - filter, check library complexity and format for peak calling
 - [Peak Calling](#peak-calling)
+- [Peak Calling QC and differential accessibility (DA) analysis](#peak-QC-and-DA)
 - [Visualisation](#visualisation)
 - Functional analysis & Motif Discovery
 
@@ -95,17 +97,20 @@ The output `bam` file should be sorted and indexed prior to the downstream analy
 
 ```bash
 #Sort the output bam file by coordinate
-picard SortSam I=<sample>.bam O=<sample>_sorted.bam SO=coordinate CREATE_INDEX=TRUE
+samtools sort <sample>.bam -o <sample>_sorted.bam 
+
+#Generate an index file
+samtools index <sample>_sorted.bam
 ```
 
 ## Post-alignment QC
 
-The post-alignment QC steps involve several steps:
+The post-alignment QC involves several steps:
 
 - [Remove mitochondrial reads](#remove-mitochondrial-reads)
 - [Remove duplicates & low-quality alignments](#remove-duplicates-&-low-quality-alignments) (including non-uniquely mapped reads)
 - [Calculate library complexity and QC](#calculate-library-complexity-and-QC)
-- [Remove ENCODE black-list regions](#remove-encode-black-list-regions)
+- [Remove ENCODE blacklist regions](#remove-encode-blacklist-regions)
 
 For an ATAC-seq experiment, the number of uniquely mapped reads ***after these steps*** is recommended to be 25 million of 50 million paired-end reads [(Buenrostro et al. 2015)](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4374986/). Specific to ATAC-seq, an additional QC step is to check the fragment size distribution, which is expected to correspond to the length of nucleosomes:
 
@@ -129,6 +134,7 @@ The second column is the length of the chromosome and the third column is the to
 #Generate the flagstat report
 samtools flagstat <sample>_sorted.bam > <sample>_sorted.flagstat
 
+#check the total number of aligned fragments
 head <sample>_sorted.flagstat
 ```
 
@@ -136,20 +142,17 @@ The % of DNA fragments aligned to chrM can be calculated as a % of the total DNA
 
 ```bash
 #Remove reads aligned to the mitochondria
-samtools view -h <sample>-sorted.bam | grep -v chrM | samtools sort -O bam -o <sample>.rmChrM.bam -T .
+samtools view -h <sample>_sorted.bam | grep -v chrM | samtools sort -O bam -o <sample>.rmChrM.bam -T .
 ```
 
 ### Mark duplicates 
 
-To mark duplicate reads:
+To mark duplicate reads and view the % of duplicates:
 
 ```bash
 picard MarkDuplicates QUIET=true INPUT=<sample>.rmChrM.bam OUTPUT=<sample>.marked.bam METRICS_FILE=<sample>.dup.metrics REMOVE_DUPLICATES=false CREATE_INDEX=true VALIDATION_STRINGENCY=LENIENT TMP_DIR=.
-```
 
-The % of duplicates can be viewed using:
-
-```bash
+#View the % of duplicates
 head -n 8 <sample>.dup.metrics | cut -f 7,9 | grep -v ^# | tail -n 2
 ```
 
@@ -159,7 +162,7 @@ The output `sam/bam` files contain several measures of quality. First, the align
 
 **Multi-mapping:** the user should decide whether or not to retain reads which have multi-mapped, i.e. aligned to more than one position in the reference genome. When using paired-end data, it may be the case that one read aligns to a repetitive region (and therefore can map elsewhere), while the mate aligns to a unique sequence with a high quality. The bowtie2 parameters used above required reads to align within 50-700bp, so there should be no reads incorrectly aligned outside this distance. As such, the user may decide to keep multi-mapping reads on the assumption that they are likely to be mapped to the correct sequence, within the length of the DNA fragment. This may, however, cause incorrect alignments in extended repetitive regions where a read could map to multiple positions within the length of the DNA fragment. This should be minimised by the downstream removal of the [ENCODE Blacklisted regions](https://www.nature.com/articles/s41598-019-45839-z).
 
-If a read is multi-mapped, it is assigned a low quality score by bowtie2. To view how many DNA reads which align with a quality score >30, run (divide this number by 2 to calculate the # of DNA fragments):
+If a read is multi-mapped, it is assigned a low quality score by bowtie2. To view how many DNA reads align with a quality score >30, run the following (divide this number by 2 to calculate the # of DNA fragments):
 
 ```bash
 samtools view -q 30 -c <sample>.marked.bam
@@ -185,10 +188,12 @@ The output `bam` file, which is now sorted by name, should be indexed:
 samtools index <sample>.filtered.bam
 ```
 
-### Remove ENCODE black-list regions 
+### Remove ENCODE blacklist regions
+
+The [ENCODE blacklist regions](https://github.com/Boyle-Lab/Blacklist/), most recently reported by [Amemiya et al. (2019)](https://www.nature.com/articles/s41598-019-45839-z) are defined as 'a comprehensive set of regions in the human, mouse, worm, and fly genomes that have anomalous, unstructured, or high signal in next-generation sequencing experiments independent of cell line or experiment.' These problematic regions should be removed before further analysis. Download the blacklist files for your chosen reference genome from the [Boyle Lab github repository](https://github.com/Boyle-Lab/Blacklist/tree/master/lists). Details regarding the identification of blacklist regions are reported [here](https://github.com/Boyle-Lab/Blacklist/blob/master/lists/hg19-blacklist-README.pdf).
 
 ```bash
-bedtools intersect -nonamecheck -v -abam <sample>.filtered.bam -b ${BLACKLIST} > <sample>.blacklist-filtered.bam
+bedtools intersect -nonamecheck -v -abam <sample>.filtered.bam -b hg19-blacklist.v2.bed > <sample>.blacklist-filtered.bam
 ```
 
 ### Assess fragment size distribution and QC
@@ -220,12 +225,41 @@ samtools view -H <sample>.filtered.bam | perl -ne 'if(/^@SQ.*?SN:(\w+)\s+LN:(\d+
 java -jar HMMRATAC_V1.2.10_exe.jar -b <sample>.filtered.bam -i <sample>.filtered.bam.bai -g genome.info -o <sample>
 ```
 
+### Peak QC and DA
+
+Quality control of the peaks, along with differential accessiblity analysis (if this is an aim of your project) will be carried out. 
+
+***The following analysis will be completed in R***
+
+See [ENCODE ATAC-seq data standards and prototype processing pipeline](https://www.encodeproject.org/atac-seq/)
+
+- The number of peaks
+- Fraction of reads in peaks (FRiP) score 
+- Transcription start site (TSS) enrichment 
+- Biological replicate peak overlap
+- Compare normalisation methods and systematic biases
+
+Number of peaks should be >150,000 and not less than 100,000 (>70,000 in an IDR file)
+
+
+
+
+
+TSS enrichment should be ideally >10 for hg19 and not <6 and ideally >7 and not <5 for GRCh38.
+
+HOMER can be used for genomic annotation.
+
+FRiP score should be >0.3 and not less than 0.2. 
+
+Biological replicate peak overlap: ENCODE-define naive overlap which calls peaks on pooled replicates and then identifies peaks with >50% overlap with all single replicate peaks.
+
+
 ## Visualisation
 
 The QC-ed `bam` file can be converted to a `bedGraph` format to visualise sequencing trakcs using tools such as the UCSC browser or the integrative genomes browser. The ENCODE blacklist regions can be provided, to exclude them from the output:
 
 ```bash
-bedtools bamCoverage --blackListFileName --normalizeUsing BPM -b <sample>.filtered.bam > <sample>.bedGraph
+bedtools bamCoverage --normalizeUsing BPM -b <sample>.filtered.bam > <sample>.bedGraph
 ```
 
 TmpScale=$(bc <<< "scale=6;1000000/$(samtools view -f 0 -c mybamfile.bam)")
