@@ -90,7 +90,7 @@ Bowtie2 should be used to create the reference genome index files (see the bowti
 bt2idx=/path/to/reference-genome
 
 #Run the bowtie2 alignment and output a bam alignment file
-bowtie2 --local --very-sensitive --no-mixed --no-discordant -I 35 -X 700 -x $bt2idx/human_g1k_v37.fasta -1 <sample>_R1.trimmed.fastq.gz -2 <sample>_R2.trimmed.fastq.gz) 2> <sample>.bowtie2 | samtools view -bS - > <sample>.bam
+bowtie2 --local --very-sensitive --no-mixed --no-discordant -I 35 -X 700 -x $bt2idx/human_g1k_v37.fasta -1 <sample>_R1.trimmed.fastq.gz -2 <sample>_R2.trimmed.fastq.gz | samtools view -bS - > <sample>.bam
 ```
 
 The output `bam` file should be sorted and indexed prior to the downstream analysis:
@@ -118,7 +118,7 @@ For an ATAC-seq experiment, the number of uniquely mapped reads ***after these s
 
 ### Remove mitochondrial reads
 
-ATAC-seq experiments commonly include a high proportion of mitochondrial reads. These should be removed. To assess the total % of mitochondrial reads, `samtools idxstats` can be run to report the total number of reads mapping to each chromosome. `samtools flagstat` provides a short report including the total number of DNA fragments. 
+ATAC-seq experiments commonly include a high proportion of mitochondrial reads. These should be removed. To assess the total % of mitochondrial reads, `samtools idxstats` can be run to report the total number of reads mapped to each chromosome. `samtools flagstat` provides a short report including the total number of DNA reads as the first line (halve this number for the total number of fragments). 
 
 ```bash
 #Generate the idxstats report
