@@ -173,13 +173,13 @@ A low % of uniquely mapped reads map result from short reads, excessive PCR ampl
 To ***retain*** multi-mapped reads:
 
 ```bash
-samtools view -h -b -f 2 -F 1548 <sample>.rmChrM.bam | samtools sort -n <sample>.filtered.bam 
+samtools view -h -b -f 2 -F 1548 <sample>.rmChrM.bam | samtools sort -n -o <sample>.filtered.bam 
 ```
 
 To ***remove*** multi-mapped reads:
 
 ```bash
-samtools view -h -b -f 2 -F 1548 -q 30 <sample>.rmChrM.bam | samtools sort -n <sample>.filtered.bam
+samtools view -h -b -f 2 -F 1548 -q 30 <sample>.rmChrM.bam | samtools sort -n -o <sample>.filtered.bam
 ```
 
 The output `bam` file, which is now sorted by name, should be indexed: 
