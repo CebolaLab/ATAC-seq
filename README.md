@@ -112,6 +112,7 @@ The post-alignment QC involves several steps:
 - [Remove duplicates & low-quality alignments](#remove-duplicates-&-low-quality-alignments) (including non-uniquely mapped reads)
 - [Calculate library complexity and QC](#calculate-library-complexity-and-QC)
 - [Remove ENCODE blacklist regions](#remove-encode-blacklist-regions)
+- [Shift read coordinates](#shift-read-coordinates)
 
 For an ATAC-seq experiment, the number of uniquely mapped reads ***after these steps*** is recommended to be 25 million of 50 million paired-end reads [(Buenrostro et al. 2015)](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4374986/). Specific to ATAC-seq, an additional QC step is to check the fragment size distribution, which is expected to correspond to the length of nucleosomes:
 
