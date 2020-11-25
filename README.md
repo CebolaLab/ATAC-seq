@@ -200,7 +200,7 @@ bedtools intersect -nonamecheck -v -abam <sample>.filtered.bam -b hg19-blacklist
 
 ### Shift read coordinates
 
-An optional step in analysing data generated using the Tn5 transposase (such as ATAC-seq, ChIPmentation etc.) is to account for a small DNA insertion. Reads aligning to the + strand should be offset by +4bp and reads aligned to the -ve strand should be offset by -5bp. For references, see the first ATAC-seq paper by [Buenrostro et al., (2013)](https://www.nature.com/articles/nmeth.2688) and the analysis by [Adey et al., (2010)](https://genomebiology.biomedcentral.com/articles/10.1186/gb-2010-11-12-r119) which showed this insertion bias. Shifting coordinates is only really important if single-base resolution is required, for example in the analysis of transcription factor motifs in ATAC-seq peak footprints. Be aware that some tools do this shifting themselves (so double check manuals!).
+An optional step in analysing data generated using the Tn5 transposase (such as ATAC-seq, ChIPmentation etc.) is to account for a small DNA insertion, introducted as repair of the transposase-induced nick introduces a 9bp insertion. Reads aligning to the + strand should be offset by +4bp and reads aligned to the -ve strand should be offset by -5bp. For references, see the first ATAC-seq paper by [Buenrostro et al., (2013)](https://www.nature.com/articles/nmeth.2688) and the analysis by [Adey et al., (2010)](https://genomebiology.biomedcentral.com/articles/10.1186/gb-2010-11-12-r119) which showed this insertion bias. Shifting coordinates is only really important if single-base resolution is required, for example in the analysis of transcription factor motifs in ATAC-seq peak footprints. Be aware that some tools do this shifting themselves (so double check manuals!).
  
 
 We can use the `bedtools` command  `alignmentSieve`.
@@ -212,10 +212,10 @@ alignmentSieve --numberOfProcessors max --ATACshift --blackListFileName hg19-bla
 
 #Sort and index the bam file
 #Set the number of preferred threads with the -@ option
-samtools sort -@ 8 -O bam -o <sample>.shifted.bam <sample>.tmp.bam
-samtools index -@ 8 sample1.shifted.bam
+samtools sort -O bam -o <sample>.shifted.bam <sample>.tmp.bam
+samtools index <sample>.shifted.bam
 
-rm sample1.tmp.bam
+rm <sample>.tmp.bam
 ```
 
 ### Assess fragment size distribution and QC
@@ -233,26 +233,35 @@ The fragment size is expected to show a periodicity of 150/200 bp, reflecting th
 *The following analysis should be carried out in **R***.
 
 ```R
+#R - install and load the ATACseqQC library
 if (!requireNamespace("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
 
 BiocManager::install("ATACseqQC")
 library(ATACseqQC)
-
 ```
+
+The <sample>.shifted.bam file should be analysed in the following steps.
+
+
+**TO BE COMPLETED**
 
 ## Peak calling
 
 Peaks are identified where sequenced reads accumulate. These correspond to regions of accessible DNA.
 
-In this pipeline, peaks will be called using two alternatuve software: [HMMRATAC, developed by Tarbell et al. (2019)](https://academic.oup.com/nar/article/47/16/e91/5519166) and [MACS2](https://github.com/macs3-project/MACS).
+In this pipeline, peaks will be called using two alternatuve software: [HMMRATAC, developed by Tarbell et al. (2019)](https://academic.oup.com/nar/article/47/16/e91/5519166) and [MACS2](https://github.com/macs3-project/MACS). While MACS2 is the most popular peak caller and should be used to generate consistent data, [Yan et al. (2020)](https://genomebiology.biomedcentral.com/track/pdf/10.1186/s13059-020-1929-3) recommend using the peak caller HMMRATAC, developed by [Tarbell et al. (2019)](https://academic.oup.com/nar/article/47/16/e91/5519166), which is specifically developed for ATAC-seq data (if computational resources are sufficient). HMMRATAC is available on [github](https://github.com/LiuLabUB/HMMRATAC).
 
-Important considerations for ATAC-seq: there are usually no controls; the Tn5 transposase has a binding preference, resulting in a GC bias which should be corrected for during peak calling; repair of the transposase-induced nick introduces a 9bp insertion. When investigating high-resolution motif enrichment, ATAC-seq reads are shifted +4bp and -5bp for positive and negative strands to account for this. This step is not necessary for peak calling, since hundreds of bp are typically implicated.  [Yan et al. (2020)](https://genomebiology.biomedcentral.com/track/pdf/10.1186/s13059-020-1929-3) recommend using the peak caller HMMRATAC, developed by [Tarbell et al. (2019)](https://academic.oup.com/nar/article/47/16/e91/5519166), which is specifically developed for ATAC-seq data (if computational resources are sufficient). Alternatively, MACS2 is a pop\lar peak caller.
+Important considerations for ATAC-seq: 
+- There are usually **no controls**
+- The Tn5 transposase has a binding preference, resulting in a GC bias which should be corrected for during peak calling
+- Repair of the transposase-induced nick introduces a 9bp insertion (completed above). 
+
+### MACS2 
 
 
-HMMRATAC is available on [github](https://github.com/LiuLabUB/HMMRATAC).
 
-The input file should be sorted by coordinate and indexed.
+### HMMRATAC
 
 ```bash
 samtools view -H <sample>.filtered.bam | perl -ne 'if(/^@SQ.*?SN:(\w+)\s+LN:(\d+)/){print $1,"\t",$2,"\n"}' > genome.info
