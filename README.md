@@ -292,7 +292,7 @@ The output files:
 
 #### Visualisation 
 
-The <sample>.pileup file can be used to generate a track of -log<sub>10<\sub>p-value, by comparing the treatment to the local lamba estimates. The macs subcommand, `bdgcmp` will be used.
+The <sample>.pileup file can be used to generate a track of -log<sub>10</sub> p-value, by comparing the treatment to the local lamba estimates. The macs subcommand, `bdgcmp` will be used.
 
 ```bash
 macs bdgcmp -t <sample>.broad_treat_pileup.bdg -c  <sample>.broad_control_lambda.bdg -m ppois --o-prefix <sample>
