@@ -251,7 +251,7 @@ The <sample>.shifted.bam file should be analysed in the following steps.
 
 ## Visualisation
 
-Through this pipeline, two types of tracks will be generated for visualisation in genome browsers. The first, generated here, will show the aligned reads and are generated from the processed `bam` file. The second, generated after peak calling, will show the -log<sub>10 p-value from the peak calling.
+Through this pipeline, two types of tracks will be generated for visualisation in genome browsers. The first, generated here, will show the aligned reads and are generated from the processed `bam` file. The second, generated after peak calling, will show the -log<sub>10</sub> p-value from the peak calling.
 
 The `deeptools` command `bamCoverage` will be used 
 
