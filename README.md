@@ -251,7 +251,7 @@ The <sample>.shifted.bam file should be analysed in the following steps.
 
 ## Visualisation
 
-Through this pipeline, two types of tracks will be generated for visualisation in genome browsers. The first, generated here, will show the aligned reads and are generated from the processed `bam` file. The second, generated after peak calling, will show the -log<sub>10<\sub>p-value from the peak calling.
+Through this pipeline, two types of tracks will be generated for visualisation in genome browsers. The first, generated here, will show the aligned reads and are generated from the processed `bam` file. The second, generated after peak calling, will show the -log<sub>10 p-value from the peak calling.
 
 The `deeptools` command `bamCoverage` will be used 
 
@@ -266,7 +266,7 @@ bamCoverage --numberOfProcessors 8 --binSize 10 --normalizeUsing RPGC \
 
 Peaks are identified where sequenced reads accumulate. These correspond to regions of accessible DNA.
 
-In this pipeline, peaks will be called using two alternatuve software: [HMMRATAC, developed by Tarbell et al. (2019)](https://academic.oup.com/nar/article/47/16/e91/5519166) and [MACS2](https://github.com/macs3-project/MACS). While MACS2 is the most popular peak caller and should be used to generate consistent data, [Yan et al. (2020)](https://genomebiology.biomedcentral.com/track/pdf/10.1186/s13059-020-1929-3) recommend using the peak caller HMMRATAC, developed by [Tarbell et al. (2019)](https://academic.oup.com/nar/article/47/16/e91/5519166), which is specifically developed for ATAC-seq data (if computational resources are sufficient). HMMRATAC is available on [github](https://github.com/LiuLabUB/HMMRATAC).
+In this pipeline, peaks will be called using two alternative software: [HMMRATAC, developed by Tarbell et al. (2019)](https://academic.oup.com/nar/article/47/16/e91/5519166) and [MACS2](https://github.com/macs3-project/MACS). While MACS2 is the most popular peak caller and should be used to generate consistent data, [Yan et al. (2020)](https://genomebiology.biomedcentral.com/track/pdf/10.1186/s13059-020-1929-3) recommend using the peak caller HMMRATAC, developed by [Tarbell et al. (2019)](https://academic.oup.com/nar/article/47/16/e91/5519166), which is specifically developed for ATAC-seq data (if computational resources are sufficient). HMMRATAC is available on [github](https://github.com/LiuLabUB/HMMRATAC).
 
 Important considerations for ATAC-seq: 
 - There are usually **no controls**
