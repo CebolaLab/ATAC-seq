@@ -207,6 +207,9 @@ We can use the `deeptools` command  `alignmentSieve`.
 
 
 ```bash
+#The bam file must be indexed 
+samtools index <sample>.blacklist-filtered.bam
+
 #The user can set the preferred number of processors 
 alignmentSieve --numberOfProcessors max --ATACshift --blackListFileName hg19-blacklist.v2.bed --bam <sample>.blacklist-filtered.bam -o <sample>.tmp.bam
 
@@ -246,6 +249,19 @@ The <sample>.shifted.bam file should be analysed in the following steps.
 
 **TO BE COMPLETED**
 
+## Visualisation
+
+Through this pipeline, two types of tracks will be generated for visualisation in genome browsers. The first, generated here, will show the aligned reads and are generated from the processed `bam` file. The second, generated after peak calling, will show the -log<sub>10<\sub>p-value from the peak calling.
+
+The `deeptools` command `bamCoverage` will be used 
+
+```bash
+# bam to bigwig
+# Set your preferred number of processors
+bamCoverage --numberOfProcessors 8 --binSize 10 --normalizeUsing RPGC \
+  --effectiveGenomeSize $effect_genome_size --bam <sample>.shifted.bam -o <sample>.shifted.bw
+```	
+
 ## Peak calling
 
 Peaks are identified where sequenced reads accumulate. These correspond to regions of accessible DNA.
@@ -259,7 +275,93 @@ Important considerations for ATAC-seq:
 
 ### MACS2 
 
+If using paired-end reads, MACS2 will be used with the `-f BAMPE` option, so that MACS2 calculates the pileup for full fragments. Depending on the analysis aims, there are several different options that can be used. The ENCODE3 pipeline uses the `--nomodel --shift -37 --extsize 73` options for analysing ATAC-seq data, to account for the size of nucleosomes. Nucleosomes cover \~145 bp and the ATAC-seq reads need to be shifted towards the 5' end by half this distance.
 
+```bash 
+#call peakrs
+macs2 callpeak -f BAMPE --nomodel --shift -37 --extsize 73 -g hs --keep-dup all --cutoff-analysis -n <sample> -t <sample>.shifted.bam --outdir macs2/<sample> 2> macs2.log
+```
+
+
+ENCODE code:
+
+```bash
+# Sort by Col8 in descending order and replace long peak names in Column 4 with Peak_<peakRank>
+sort -k 8gr,8gr "$prefix"_peaks.narrowPeak | awk 'BEGIN{OFS="\t"}{$4="Peak_"NR ; print $0}' | head -n ${NPEAKS} | gzip -nc > $peakfile
+
+rm -f "$prefix"_peaks.narrowPeak
+rm -f "$prefix"_peaks.xls
+rm -f "$prefix"_summits.bed
+
+
+macs2 bdgcmp -t "$prefix"_treat_pileup.bdg -c "$prefix"_control_lambda.bdg
+    --o-prefix "$prefix" -m FE
+
+slopBed -i "$prefix"_FE.bdg -g "$chrsz" -b 0 | bedClip stdin "$chrsz" $fc_bedgraph
+rm -f "$prefix"_FE.bdg
+
+sort -k1,1 -k2,2n $fc_bedgraph > $fc_bedgraph_srt
+bedGraphToBigWig $fc_bedgraph_srt "$chrsz" "$fc_bigwig"
+rm -f $fc_bedgraph $fc_bedgraph_srt
+
+# sval counts the number of tags per million in the (compressed) BED file
+sval=$(wc -l <(zcat -f "$tag") | awk '{printf "%f", $1/1000000}')
+
+macs2 bdgcmp
+    -t "$prefix"_treat_pileup.bdg -c "$prefix"_control_lambda.bdg
+    --o-prefix "$prefix" -m ppois -S "${sval}"
+slopBed -i "$prefix"_ppois.bdg -g "$chrsz" -b 0 | bedClip stdin "$chrsz" $pval_bedgraph
+rm -f "$prefix"_ppois.bdg
+
+sort -k1,1 -k2,2n $pval_bedgraph > $pval_bedgraph_srt
+bedGraphToBigWig $pval_bedgraph_srt "$chrsz" "$pval_bigwig"
+rm -f $pval_bedgraph $pval_bedgraph_srt
+
+
+rm -f "$prefix"_treat_pileup.bdg "$prefix"_control_lambda.bdg
+
+```
+
+The output files:
+
+- <sample>.broad_treat_pileup.bdg
+- <sample>.broad_control_lambda.bdg
+- <sample>.broad_peaks.broadPeak
+- <sample>.broad_peaks.gappedPeak
+- <sample>.broad_peaks.xls
+
+#### Visualisation 
+
+The <sample>.pileup file can be used to generate a track of -log<sub>10<\sub>p-value, by comparing the treatment to the local lamba estimates. The macs subcommand, `bdgcmp` will be used.
+
+```bash
+macs bdgcmp -t <sample>.broad_treat_pileup.bdg -c  <sample>.broad_control_lambda.bdg -m ppois --o-prefix <sample>
+```
+
+
+
+
+
+```bash
+#???
+#LC_COLLATE=C sort -k1,1 -k2,2n SRR891268.broad_treat_pileup.bdg > SRR891268.broad_treat_pileup.sorted.bdg
+
+bedGraphToBigWig <sample>.broad_treat_pileup.sorted.bdg chrom_sizes <sample>broad_peaks.bw
+```
+
+
+
+### Other peak callers
+
+[NucleoATAC](https://nucleoatac.readthedocs.io/en/latest/) ? 
+
+... check reproducibility of peaks between replicates... then re-run MACS2 with the merged bam file.
+
+
+### Genrich 
+
+See this [post](https://informatics.fas.harvard.edu/atac-seq-guidelines.html#peak) from Harvard FAS Informatics.
+Genrich does everything in one go!
 
 ### HMMRATAC
 
@@ -285,8 +387,14 @@ See [ENCODE ATAC-seq data standards and prototype processing pipeline](https://w
 
 Number of peaks should be >150,000 and not less than 100,000 (>70,000 in an IDR file)
 
-
-
+[Yan et al. (2020)](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-020-1929-3) recommendations for ATAC-seq data analysis:
+csaw for peak differential analysis
+ChIPseeker for annotation and visualisation
+MEME suite for motic detection and enrichment
+HMMRATAC for nucleosome detection
+HINT-ATAC for footprint analysis
+PCEA for regulatory network reconstruction with RNA-seq
+HOMER for motif discovery.
 
 
 TSS enrichment should be ideally >10 for hg19 and not <6 and ideally >7 and not <5 for GRCh38.
