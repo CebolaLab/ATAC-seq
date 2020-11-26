@@ -282,53 +282,13 @@ If using paired-end reads, MACS2 will be used with the `-f BAMPE` option, so tha
 macs2 callpeak -f BAMPE --nomodel --shift -37 --extsize 73 -g hs --keep-dup all --cutoff-analysis -n <sample> -t <sample>.shifted.bam --outdir macs2/<sample> 2> macs2.log
 ```
 
-
-ENCODE code:
-
-```bash
-# Sort by Col8 in descending order and replace long peak names in Column 4 with Peak_<peakRank>
-sort -k 8gr,8gr "$prefix"_peaks.narrowPeak | awk 'BEGIN{OFS="\t"}{$4="Peak_"NR ; print $0}' | head -n ${NPEAKS} | gzip -nc > $peakfile
-
-rm -f "$prefix"_peaks.narrowPeak
-rm -f "$prefix"_peaks.xls
-rm -f "$prefix"_summits.bed
-
-
-macs2 bdgcmp -t "$prefix"_treat_pileup.bdg -c "$prefix"_control_lambda.bdg
-    --o-prefix "$prefix" -m FE
-
-slopBed -i "$prefix"_FE.bdg -g "$chrsz" -b 0 | bedClip stdin "$chrsz" $fc_bedgraph
-rm -f "$prefix"_FE.bdg
-
-sort -k1,1 -k2,2n $fc_bedgraph > $fc_bedgraph_srt
-bedGraphToBigWig $fc_bedgraph_srt "$chrsz" "$fc_bigwig"
-rm -f $fc_bedgraph $fc_bedgraph_srt
-
-# sval counts the number of tags per million in the (compressed) BED file
-sval=$(wc -l <(zcat -f "$tag") | awk '{printf "%f", $1/1000000}')
-
-macs2 bdgcmp
-    -t "$prefix"_treat_pileup.bdg -c "$prefix"_control_lambda.bdg
-    --o-prefix "$prefix" -m ppois -S "${sval}"
-slopBed -i "$prefix"_ppois.bdg -g "$chrsz" -b 0 | bedClip stdin "$chrsz" $pval_bedgraph
-rm -f "$prefix"_ppois.bdg
-
-sort -k1,1 -k2,2n $pval_bedgraph > $pval_bedgraph_srt
-bedGraphToBigWig $pval_bedgraph_srt "$chrsz" "$pval_bigwig"
-rm -f $pval_bedgraph $pval_bedgraph_srt
-
-
-rm -f "$prefix"_treat_pileup.bdg "$prefix"_control_lambda.bdg
-
-```
-
 The output files:
 
-- <sample>.broad_treat_pileup.bdg
-- <sample>.broad_control_lambda.bdg
-- <sample>.broad_peaks.broadPeak
-- <sample>.broad_peaks.gappedPeak
-- <sample>.broad_peaks.xls
+- `<sample>.broad_treat_pileup.bdg`
+- `<sample>.broad_control_lambda.bdg`
+- `<sample>.broad_peaks.broadPeak`
+- `<sample>.broad_peaks.gappedPeak`
+- `<sample>.broad_peaks.xls`
 
 #### Visualisation 
 
