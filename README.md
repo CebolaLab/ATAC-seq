@@ -1,13 +1,11 @@
 # ATAC-seq
 ## **UNDER CONSTRUCTION**
 
-[Cebola Lab](https://www.imperial.ac.uk/metabolism-digestion-reproduction/research/systems-medicine/genetics--genomics/regulatory-genomics-and-metabolic-disease/)
+A Step-by-step analysis pipeline/tutorial for ATAC-seq data, written by the [Cebola Lab](https://www.imperial.ac.uk/metabolism-digestion-reproduction/research/systems-medicine/genetics--genomics/regulatory-genomics-and-metabolic-disease/).
 
-Step-by-step analysis pipeline/tutorial for ATAC-seq data
+Correspondence = hannah.maude12@imperial.ac.uk
 
-The following pipeline will describe the step-by-step analysis of ATAC-seq data (the **a**ssay for **t**ransposase-**a**ccessible **c**hromatin with **seq**uencing). 
-
-This resources used to build this pipeiline are listed at the bottom in the [Resources](#resources) section. 
+The following pipeline will describe the step-by-step analysis of ATAC-seq data (the **a**ssay for **t**ransposase-**a**ccessible **c**hromatin with **seq**uencing). The resources used to build this pipeiline are listed at the bottom in the [Resources](#resources) section. 
 
 The following steps will be covered:
 
