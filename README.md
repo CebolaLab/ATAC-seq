@@ -5,17 +5,9 @@
 
 Step-by-step analysis pipeline/tutorial for ATAC-seq data
 
-The following pipeline will describe the step-by-step analysis of ATAC-seq data (the **a**ssay for **t**ransposase-**a**ccessible **c**hromatin with **seq**uencing). This has been adapted from the following resources:
+The following pipeline will describe the step-by-step analysis of ATAC-seq data (the **a**ssay for **t**ransposase-**a**ccessible **c**hromatin with **seq**uencing). 
 
-- https://vallierlab.wixsite.com/pipelines/atac-seq A great tool for beginners indicating the major analysis steps 
-- https://www.encodeproject.org/atac-seq/ The recommended ENCODE pipeline, for which tools are available on [github](https://github.com/ENCODE-DCC/atac-seq-pipeline) and the recommended parameters/specification are available via a [google doc](https://docs.google.com/document/d/1f0Cm4vRyDQDu0bMehHD7P7KOMxTOP-HiNoIvL1VcBt8/edit)
-- https://github.com/harvardinformatics/ATAC-seq An ATAC-seq pipeline from Harvard Informatics 
-- https://yiweiniu.github.io/blog/2019/03/ATAC-seq-data-analysis-from-FASTQ-to-peaks/ A similar github page presenting an ATAC-seq pipeline 
-- https://galaxyproject.github.io/training-material/topics/epigenetics/tutorials/atac-seq/tutorial.html
-- Standardized ENCODE pipeline devides by Kundaje et al. https://libraries.io/github/kundajelab/atac_dnase_pipelines
-- [Hbctaining tutorial for peak calling](https://hbctraining.github.io/Intro-to-ChIPseq/lessons/05_peak_calling_macs.html)
-
-An recent review on the ATAC-seq analysis pipeline is reported by [Yan et al. (2020)](https://genomebiology.biomedcentral.com/track/pdf/10.1186/s13059-020-1929-3).
+This resources used to build this pipeiline are listed at the bottom in the [Resources](#resources) section. 
 
 The following steps will be covered:
 
@@ -404,3 +396,16 @@ A recent tool which can be used to assess motifs and transcription factor footpr
 picard CollectInsertSizeMetrics
 ```
 
+## Resources
+
+This pipeline has been developed using guidance from the following resources:
+
+- https://vallierlab.wixsite.com/pipelines/atac-seq A great tool for beginners indicating the major analysis steps 
+- https://www.encodeproject.org/atac-seq/ The recommended ENCODE pipeline, for which tools are available on [github](https://github.com/ENCODE-DCC/atac-seq-pipeline) and the recommended parameters/specification are available via a [google doc](https://docs.google.com/document/d/1f0Cm4vRyDQDu0bMehHD7P7KOMxTOP-HiNoIvL1VcBt8/edit)
+- https://github.com/harvardinformatics/ATAC-seq An ATAC-seq pipeline from Harvard Informatics 
+- https://yiweiniu.github.io/blog/2019/03/ATAC-seq-data-analysis-from-FASTQ-to-peaks/ A similar github page presenting an ATAC-seq pipeline 
+- https://galaxyproject.github.io/training-material/topics/epigenetics/tutorials/atac-seq/tutorial.html
+- Standardized ENCODE pipeline devides by Kundaje et al. https://libraries.io/github/kundajelab/atac_dnase_pipelines
+- [Hbctaining tutorial for peak calling](https://hbctraining.github.io/Intro-to-ChIPseq/lessons/05_peak_calling_macs.html)
+
+An recent review on the ATAC-seq analysis pipeline is reported by [Yan et al. (2020)](https://genomebiology.biomedcentral.com/track/pdf/10.1186/s13059-020-1929-3).
