@@ -273,6 +273,14 @@ Important considerations for ATAC-seq:
 - The Tn5 transposase has a binding preference, resulting in a GC bias which should be corrected for during peak calling
 - Repair of the transposase-induced nick introduces a 9bp insertion (completed above). 
 
+The following steps will be carried out:
+
+- Call peaks - MACS2
+- Generate -log<sub>10</sub> p-value bigwig tracks for MACS2 peaks
+- Peak quality control
+- Call peaks - HMMRATAC
+- Call peaks - Genrich
+
 ### MACS2 
 
 If using paired-end reads, MACS2 will be used with the `-f BAMPE` option, so that MACS2 calculates the pileup for full fragments. Depending on the analysis aims, there are several different options that can be used. The ENCODE3 pipeline uses the `--nomodel --shift -37 --extsize 73` options for analysing ATAC-seq data, to account for the size of nucleosomes. Nucleosomes cover \~145 bp and the ATAC-seq reads need to be shifted towards the 5' end by half this distance.
@@ -305,12 +313,28 @@ sort -k1,1 -k2,2n <sample>_ppois.bdg > <sample>_ppois.sorted.bdg
 fetchChromSizes hg38 > hg38.chrom.sizes
 
 #Convert to bigWig
-bedGraphToBigWig <sample>_ppois.sorted.bdg hg38.chrom.sizes > <sample>.bw
+bedGraphToBigWig <sample>_ppois.sorted.bdg hg38.chrom.sizes > <sample>_macs2_pval.bw
 ```
 
-The `<sample>_ppois.bw` output file can visualised in a genome browser, such as UCSC.
+The `sample>_macs2_pval.bw` output file can visualised in a genome browser, such as UCSC.
 
+#### Quality control
 
+Quality control steps should be carried out to assess the called peaks, as well as reproducibility between samples.
+
+Quality control of the peaks, along with differential accessiblity analysis (if this is an aim of your project) will be carried out. 
+
+***The following analysis will be completed in R***
+
+See [ENCODE ATAC-seq data standards and prototype processing pipeline](https://www.encodeproject.org/atac-seq/)
+
+- The number of peaks
+- Fraction of reads in peaks (FRiP) score 
+- Transcription start site (TSS) enrichment 
+- Biological replicate peak overlap
+- Compare normalisation methods and systematic biases
+
+Number of peaks should be >150,000 and not less than 100,000 (>70,000 in an IDR file)
 
 
 ### Other peak callers
@@ -333,21 +357,7 @@ samtools view -H <sample>.filtered.bam | perl -ne 'if(/^@SQ.*?SN:(\w+)\s+LN:(\d+
 java -jar HMMRATAC_V1.2.10_exe.jar -b <sample>.filtered.bam -i <sample>.filtered.bam.bai -g genome.info -o <sample>
 ```
 
-### Peak QC and DA
-
-Quality control of the peaks, along with differential accessiblity analysis (if this is an aim of your project) will be carried out. 
-
-***The following analysis will be completed in R***
-
-See [ENCODE ATAC-seq data standards and prototype processing pipeline](https://www.encodeproject.org/atac-seq/)
-
-- The number of peaks
-- Fraction of reads in peaks (FRiP) score 
-- Transcription start site (TSS) enrichment 
-- Biological replicate peak overlap
-- Compare normalisation methods and systematic biases
-
-Number of peaks should be >150,000 and not less than 100,000 (>70,000 in an IDR file)
+## Differential accessibility 
 
 [Yan et al. (2020)](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-020-1929-3) recommendations for ATAC-seq data analysis:
 csaw for peak differential analysis
