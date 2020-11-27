@@ -292,22 +292,24 @@ The output files:
 
 #### Visualisation 
 
-The <sample>.pileup file can be used to generate a track of -log<sub>10</sub> p-value, by comparing the treatment to the local lamba estimates. The macs subcommand, `bdgcmp` will be used.
+The <sample>.pileup file can be used to generate a track of -log<sub>10</sub> p-value, by comparing the treatment to the local lamba estimates using the macs2 subcommand, `bdgcmp`:
 
 ```bash
+#Generate the p-value bedGraph
 macs bdgcmp -t <sample>.broad_treat_pileup.bdg -c  <sample>.broad_control_lambda.bdg -m ppois --o-prefix <sample>
+
+#Sort the bedGraph file
+sort -k1,1 -k2,2n <sample>_ppois.bdg > <sample>_ppois.sorted.bdg
+
+#Convert it to bigWig using the bedGraphToBigWig executable
+fetchChromSizes hg38 > hg38.chrom.sizes
+
+#Convert to bigWig
+bedGraphToBigWig <sample>_ppois.sorted.bdg hg38.chrom.sizes > <sample>.bw
 ```
 
+The `<sample>_ppois.bw` output file can visualised in a genome browser, such as UCSC.
 
-
-
-
-```bash
-#???
-#LC_COLLATE=C sort -k1,1 -k2,2n SRR891268.broad_treat_pileup.bdg > SRR891268.broad_treat_pileup.sorted.bdg
-
-bedGraphToBigWig <sample>.broad_treat_pileup.sorted.bdg chrom_sizes <sample>broad_peaks.bw
-```
 
 
 
