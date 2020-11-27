@@ -80,16 +80,26 @@ wget ftp://ftp-trace.ncbi.nih.gov/1000genomes/ftp/technical/reference/human_g1k_
 
 #to download the more recent GRCh38
 wget ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/001/405/GCA_000001405.15_GRCh38/seqs_for_alignment_pipelines.ucsc_ids/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.gz
+
+#Remember to extract the files using gunzip!
 ```
 
-Bowtie2 should be used to create the reference genome index files (see the bowtie2 [manual](http://bowtie-bio.sourceforge.net/bowtie2/manual.shtml#indexing-a-reference-genome)). After the index files have been generated, align the trimmed ATAC-seq fastq files to the genome (here using hg19/b37):
+Bowtie2 should be used to create the reference genome index files (see the bowtie2 [manual](http://bowtie-bio.sourceforge.net/bowtie2/manual.shtml#indexing-a-reference-genome)). After the index files have been generated, align the trimmed ATAC-seq fastq files to the genome:
 
 ```bash
 #set the bt2idx variable to the directory with the reference genome and indexes
 bt2idx=/path/to/reference-genome
+```
 
+To align to hg19/b37:
+```bash
 #Run the bowtie2 alignment and output a bam alignment file
-bowtie2 --local --very-sensitive --no-mixed --no-discordant -I 25 -X 700 -x $bt2idx/human_g1k_v37.fasta -1 <sample>_R1.trimmed.fastq.gz -2 <sample>_R2.trimmed.fastq.gz | samtools view -bS - > <sample>.bam
+bowtie2 --local --very-sensitive --no-mixed --no-discordant -I 25 -X 700 -x $bt2idx/human_g1k_v37 -1 <sample>_R1.trimmed.fastq.gz -2 <sample>_R2.trimmed.fastq.gz | samtools view -bS - > <sample>.bam
+```
+
+To align to GRCh38:
+```bash
+bowtie2 --local --very-sensitive --no-mixed --no-discordant -I 25 -X 700 -x $bt2idx/GCA_000001405.15_GRCh38_no_alt_analysis_set -1 <sample>_R1.trimmed.fastq.gz -2 <sample>_R2.trimmed.fastq.gz | samtools view -bS - > <sample>.bam
 ```
 
 The output `bam` file should be sorted and indexed prior to the downstream analysis:
