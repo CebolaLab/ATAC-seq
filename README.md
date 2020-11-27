@@ -53,13 +53,13 @@ Adapters and low quality reads/bases should be trimmed using one of several prog
 
 <img src="https://github.com/CebolaLab/ATAC-seq/blob/master/Figures/adapters.png" width="800">
 
-For this pipeline, fastp is used to remove adapter sequences. The minimum fragment length is set at 35, since short ATAC-seq fragments can be observed if the transposase cuts adjacent nucleosome-free DNA. 
+For this pipeline, fastp is used to remove adapter sequences. The minimum fragment length is set at 25, since short ATAC-seq fragments can be observed if the transposase cuts adjacent nucleosome-free DNA. 
 
 ```bash
-fastp -i <sample>_R1.fastq.gz -I <sample>_R2.fastq.gz -o <sample>_R1.trimmed.fastq.gz -O <sample>_R2.trimmed.fastq.gz --detect_adapter_for_pe -l 35 -j <sample>.fastp.json -h <sample>.fastp.html
+fastp -i <sample>_R1.fastq.gz -I <sample>_R2.fastq.gz -o <sample>_R1.trimmed.fastq.gz -O <sample>_R2.trimmed.fastq.gz --detect_adapter_for_pe -l 25 -j <sample>.fastp.json -h <sample>.fastp.html
 ```
 
-The output of fastp includes a html report, part of which is shown below. This presents the total number of reads before and after filtering, including the % of high quality (Q30) bases. The report also shows the main causes of read removal. In the example below, 1.9% of reads were removed because they were shorter than the minimum read length specified above by the -l argument (35bp).
+The output of fastp includes a html report, part of which is shown below. This presents the total number of reads before and after filtering, including the % of high quality (Q30) bases. The report also shows the main causes of read removal. In the example below, 1.9% of reads were removed because they were shorter than the minimum read length specified above by the -l argument (25bp).
 
 <img src="https://github.com/CebolaLab/ATAC-seq/blob/master/Figures/fastp-html.png" width="600">
 
@@ -69,7 +69,7 @@ The processed reads should then be aligned to the reference human genome using a
 
 #### Bowtie2 alignment
 
-The `local` parameter is used to 'soft clip' the end of reads to allow the best possible alignment, including any remaining adapter sequences (e.g. 1 or 2bp).  By using the `--no-mixed` and `--no-discordant` parameters, reads will only be aligned if both reads align successfully as a pair (this avoids the need to later remove reads which are not properly paired, which is a common post-alignment QC step). The `-I 35` and `-X 700` require fragments to be greater than 35bp and less than 700bp. The user can adjust these depending on the experiment/sequencing protocol (see the fastp html report for a plot of the estimated insert sizes). The maximum fragment length of 700bp prevents reads from aligning incorrectly outside the expected fragment range. 
+The `local` parameter is used to 'soft clip' the end of reads to allow the best possible alignment, including any remaining adapter sequences (e.g. 1 or 2bp).  By using the `--no-mixed` and `--no-discordant` parameters, reads will only be aligned if both reads align successfully as a pair (this avoids the need to later remove reads which are not properly paired, which is a common post-alignment QC step). The `-I 25` and `-X 700` require fragments to be greater than 25bp and less than 700bp. The user can adjust these depending on the experiment/sequencing protocol (see the fastp html report for a plot of the estimated insert sizes). The maximum fragment length of 700bp prevents reads from aligning incorrectly outside the expected fragment range. 
 
 ***Which reference genome to use?*** See [this](http://lh3.github.io/2017/11/13/which-human-reference-genome-to-use) discussion on which reference genome to use. The recommended downloads for both hg19/b37 and GRCh38 are shown below.
 
@@ -89,7 +89,7 @@ Bowtie2 should be used to create the reference genome index files (see the bowti
 bt2idx=/path/to/reference-genome
 
 #Run the bowtie2 alignment and output a bam alignment file
-bowtie2 --local --very-sensitive --no-mixed --no-discordant -I 35 -X 700 -x $bt2idx/human_g1k_v37.fasta -1 <sample>_R1.trimmed.fastq.gz -2 <sample>_R2.trimmed.fastq.gz | samtools view -bS - > <sample>.bam
+bowtie2 --local --very-sensitive --no-mixed --no-discordant -I 25 -X 700 -x $bt2idx/human_g1k_v37.fasta -1 <sample>_R1.trimmed.fastq.gz -2 <sample>_R2.trimmed.fastq.gz | samtools view -bS - > <sample>.bam
 ```
 
 The output `bam` file should be sorted and indexed prior to the downstream analysis:
