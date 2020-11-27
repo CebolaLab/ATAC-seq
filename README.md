@@ -196,8 +196,10 @@ samtools index <sample>.filtered.bam
 The [ENCODE blacklist regions](https://github.com/Boyle-Lab/Blacklist/), most recently reported by [Amemiya et al. (2019)](https://www.nature.com/articles/s41598-019-45839-z) are defined as 'a comprehensive set of regions in the human, mouse, worm, and fly genomes that have anomalous, unstructured, or high signal in next-generation sequencing experiments independent of cell line or experiment.' These problematic regions should be removed before further analysis. Download the blacklist files for your chosen reference genome from the [Boyle Lab github repository](https://github.com/Boyle-Lab/Blacklist/tree/master/lists). Details regarding the identification of blacklist regions are reported [here](https://github.com/Boyle-Lab/Blacklist/blob/master/lists/hg19-blacklist-README.pdf).
 
 ```bash
+#Remove reads within the blacklist regions
 bedtools intersect -nonamecheck -v -abam <sample>.filtered.bam -b hg19-blacklist.v2.bed > <sample>.blacklist-filtered.bam
 
+#Index the bam file
 samtools index <sample>.blacklist-filtered.bam
 ```
 
@@ -232,18 +234,6 @@ The fragment size is expected to show a periodicity of 150/200 bp, reflecting th
 - Plot footprints
 - Plot correlations between samples
 
-
-*The following analysis should be carried out in **R***.
-
-```R
-#R - install and load the ATACseqQC library
-if (!requireNamespace("BiocManager", quietly = TRUE))
-    install.packages("BiocManager")
-
-BiocManager::install("ATACseqQC")
-library(ATACseqQC)
-```
-
 The <sample>.shifted.bam file should be analysed in the following steps.
 
 
@@ -253,7 +243,9 @@ The <sample>.shifted.bam file should be analysed in the following steps.
 
 Through this pipeline, two types of tracks will be generated for visualisation in genome browsers. The first, generated here, will show the aligned reads and are generated from the processed `bam` file. The second, generated after peak calling, will show the -log<sub>10</sub> p-value from the peak calling.
 
-The `deeptools` command `bamCoverage` will be used 
+The `deeptools` command `bamCoverage` will be used. ATAC-seq data is commonly normalised to the effective genome size...
+
+**TO BE COMPLETED**
 
 ```bash
 # bam to bigwig
