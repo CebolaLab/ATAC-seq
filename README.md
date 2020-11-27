@@ -13,13 +13,13 @@ The following steps will be covered:
 
 **Alignment, QC and track visualisation**
 - [Alignment](#alignment) 
-- [Post-alignment QC](#post-alignment-qc) - filter, check library complexity and format for peak calling
-- [Bam visualisation, bam to bigWig](#bam-visualisation) - generate tracks to visualise the aligned data on a genome browser
+- [Post-alignment QC](#post-alignment-qc): filter, check library complexity and format for peak calling
+- [Bam visualisation, bam to bigWig](#bam-visualisation): generate tracks to visualise the aligned data on a genome browser
 
 **Peak calling, QC and visualisation**
-- [Peak calling](#peak-calling) - call peaks using MACS2, HMMRATAC and Genrich
-- [Peak calling QC] - FRiP, transcription start site enrichment, sample reproducibility
-- [Peak visualisation, p-value, peaks and pileup](#peak-visualisation)
+- [Peak calling](#peak-calling): call peaks using MACS2, HMMRATAC and Genrich
+- [Peak calling QC](#peak-qc): FRiP, transcription start site enrichment, sample reproducibility
+- [Peak visualisation](#peak-visualisation): p-value, peaks and pileup
 
 **Differential accessibility analysis**
 - [Differential accessibility (DA) analysis](#peak-QC-and-DA)
@@ -316,6 +316,25 @@ Genrich does everything in one go!
 ... check reproducibility of peaks between replicates... then re-run MACS2 with the merged bam file.
 
 
+#### Peak QC
+
+Quality control steps should be carried out to assess the called peaks, as well as reproducibility between samples.
+
+Quality control of the peaks, along with differential accessiblity analysis (if this is an aim of your project) will be carried out. 
+
+***The following analysis will be completed in R***
+
+See [ENCODE ATAC-seq data standards and prototype processing pipeline](https://www.encodeproject.org/atac-seq/)
+
+- The number of peaks
+- Fraction of reads in peaks (FRiP) score 
+- Transcription start site (TSS) enrichment 
+- Biological replicate peak overlap
+- Compare normalisation methods and systematic biases
+
+Number of peaks should be >150,000 and not less than 100,000 (>70,000 in an IDR file)
+
+
 ## Peak visualisation 
 
 The <sample>.pileup file can be used to generate a track of -log<sub>10</sub> p-value, by comparing the treatment to the local lamba estimates using the macs2 subcommand, `bdgcmp`:
@@ -336,26 +355,6 @@ bedGraphToBigWig <sample>_ppois.sorted.bdg hg38.chrom.sizes > <sample>_macs2_pva
 
 The `sample>_macs2_pval.bw` output file can visualised in a genome browser, such as UCSC.
 
-#### Quality control
-
-Quality control steps should be carried out to assess the called peaks, as well as reproducibility between samples.
-
-Quality control of the peaks, along with differential accessiblity analysis (if this is an aim of your project) will be carried out. 
-
-***The following analysis will be completed in R***
-
-See [ENCODE ATAC-seq data standards and prototype processing pipeline](https://www.encodeproject.org/atac-seq/)
-
-- The number of peaks
-- Fraction of reads in peaks (FRiP) score 
-- Transcription start site (TSS) enrichment 
-- Biological replicate peak overlap
-- Compare normalisation methods and systematic biases
-
-Number of peaks should be >150,000 and not less than 100,000 (>70,000 in an IDR file)
-
-
-#
 
 ## Differential accessibility 
 
