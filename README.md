@@ -22,10 +22,10 @@ The following steps will be covered:
 - [Pre-alignment quality control (QC)](#pre-alignment-qc) 
 - [Alignment](#alignment) 
 - [Post-alignment QC](#post-alignment-qc) - filter, check library complexity and format for peak calling
-- [Visualisation, bam to bigwig](#visualisation,-bam-to-bigwig)
-- [Peak Calling](#peak-calling)
-- [Peak Calling QC and differential accessibility (DA) analysis](#peak-QC-and-DA)
-- [Visualisation, p-value, peaks and pileup](#visualisation,-peaks)
+- [Visualisation, bam to bigwig](#bam-visualisation)
+- [Peak calling](#peak-calling)
+- [Peak calling QC and differential accessibility (DA) analysis](#peak-QC-and-DA)
+- [Peak visualisation, p-value, peaks and pileup](#peak-visualisation )
 - Functional analysis & Motif Discovery
 
 ## Pre-alignment QC
@@ -250,7 +250,7 @@ The <sample>.shifted.bam file should be analysed in the following steps.
 
 **TO BE COMPLETED**
 
-## Visualisation, bam to bigwig
+## Bam visualisation
 
 Through this pipeline, two types of tracks will be generated for visualisation in genome browsers. The first, generated here, will show the aligned reads and are generated from the processed `bam` file. The second, generated after peak calling, will show the -log<sub>10</sub> p-value from the peak calling.
 
@@ -298,7 +298,28 @@ The output files:
 - `<sample>.broad_peaks.gappedPeak`
 - `<sample>.broad_peaks.xls`
 
-#### Visualisation, peaks
+### HMMRATAC
+
+```bash
+samtools view -H <sample>.filtered.bam | perl -ne 'if(/^@SQ.*?SN:(\w+)\s+LN:(\d+)/){print $1,"\t",$2,"\n"}' > genome.info
+
+java -jar HMMRATAC_V1.2.10_exe.jar -b <sample>.filtered.bam -i <sample>.filtered.bam.bai -g genome.info -o <sample>
+```
+
+### Genrich 
+
+See this [post](https://informatics.fas.harvard.edu/atac-seq-guidelines.html#peak) from Harvard FAS Informatics.
+Genrich does everything in one go!
+
+
+### Other peak callers
+
+[NucleoATAC](https://nucleoatac.readthedocs.io/en/latest/) ? 
+
+... check reproducibility of peaks between replicates... then re-run MACS2 with the merged bam file.
+
+
+## Peak visualisation 
 
 The <sample>.pileup file can be used to generate a track of -log<sub>10</sub> p-value, by comparing the treatment to the local lamba estimates using the macs2 subcommand, `bdgcmp`:
 
@@ -337,25 +358,7 @@ See [ENCODE ATAC-seq data standards and prototype processing pipeline](https://w
 Number of peaks should be >150,000 and not less than 100,000 (>70,000 in an IDR file)
 
 
-### Other peak callers
-
-[NucleoATAC](https://nucleoatac.readthedocs.io/en/latest/) ? 
-
-... check reproducibility of peaks between replicates... then re-run MACS2 with the merged bam file.
-
-
-### Genrich 
-
-See this [post](https://informatics.fas.harvard.edu/atac-seq-guidelines.html#peak) from Harvard FAS Informatics.
-Genrich does everything in one go!
-
-### HMMRATAC
-
-```bash
-samtools view -H <sample>.filtered.bam | perl -ne 'if(/^@SQ.*?SN:(\w+)\s+LN:(\d+)/){print $1,"\t",$2,"\n"}' > genome.info
-
-java -jar HMMRATAC_V1.2.10_exe.jar -b <sample>.filtered.bam -i <sample>.filtered.bam.bai -g genome.info -o <sample>
-```
+#
 
 ## Differential accessibility 
 
