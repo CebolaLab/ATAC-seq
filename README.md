@@ -275,11 +275,10 @@ Important considerations for ATAC-seq:
 
 The following steps will be carried out:
 
-- Call peaks - MACS2
+- **Call peaks** - MACS2
 - Generate -log<sub>10</sub> p-value bigwig tracks for MACS2 peaks
 - Peak quality control
-- Call peaks - HMMRATAC
-- Call peaks - Genrich
+- Repeat above, calling peaks with HMMRATAC and Genrich
 
 ### MACS2 
 
