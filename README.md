@@ -22,7 +22,7 @@ The following steps will be covered:
 - [Pre-alignment quality control (QC)](#pre-alignment-qc) 
 - [Alignment](#alignment) 
 - [Post-alignment QC](#post-alignment-qc) - filter, check library complexity and format for peak calling
-- [Visualisation, bam to bigwig](#bam-visualisation)
+- [Bam visualisation, bam to bigWig](#bam-visualisation)
 - [Peak calling](#peak-calling)
 - [Peak calling QC and differential accessibility (DA) analysis](#peak-QC-and-DA)
 - [Peak visualisation, p-value, peaks and pileup](#peak-visualisation )
