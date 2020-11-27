@@ -10,14 +10,17 @@ The following steps will be covered:
 
 **Pre-alignment processing**
 - [Pre-alignment quality control (QC)](#pre-alignment-qc) 
+
 **Alignment, QC and track visualisation**
 - [Alignment](#alignment) 
 - [Post-alignment QC](#post-alignment-qc) - filter, check library complexity and format for peak calling
 - [Bam visualisation, bam to bigWig](#bam-visualisation)
+
 **Peak calling, QC and visualisation**
 - [Peak calling](#peak-calling)
 - [Peak calling QC]
 - [Peak visualisation, p-value, peaks and pileup](#peak-visualisation)
+
 **Differential accessibility analysis**
 - [Differential accessibility (DA) analysis](#peak-QC-and-DA)
 - Functional analysis & Motif Discovery
