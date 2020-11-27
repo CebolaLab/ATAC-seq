@@ -22,9 +22,10 @@ The following steps will be covered:
 - [Pre-alignment quality control (QC)](#pre-alignment-qc) 
 - [Alignment](#alignment) 
 - [Post-alignment QC](#post-alignment-qc) - filter, check library complexity and format for peak calling
+- [Visualisation, bam to bigwig](#visualisation,-bam-to-bigwig)
 - [Peak Calling](#peak-calling)
 - [Peak Calling QC and differential accessibility (DA) analysis](#peak-QC-and-DA)
-- [Visualisation](#visualisation)
+- [Visualisation, p-value, peaks and pileup](#visualisation,-peaks)
 - Functional analysis & Motif Discovery
 
 ## Pre-alignment QC
@@ -249,7 +250,7 @@ The <sample>.shifted.bam file should be analysed in the following steps.
 
 **TO BE COMPLETED**
 
-## Visualisation
+## Visualisation, bam to bigwig
 
 Through this pipeline, two types of tracks will be generated for visualisation in genome browsers. The first, generated here, will show the aligned reads and are generated from the processed `bam` file. The second, generated after peak calling, will show the -log<sub>10</sub> p-value from the peak calling.
 
@@ -266,7 +267,7 @@ bamCoverage --numberOfProcessors 8 --binSize 10 --normalizeUsing RPGC \
 
 Peaks are identified where sequenced reads accumulate. These correspond to regions of accessible DNA.
 
-In this pipeline, peaks will be called using two alternative software: [HMMRATAC, developed by Tarbell et al. (2019)](https://academic.oup.com/nar/article/47/16/e91/5519166) and [MACS2](https://github.com/macs3-project/MACS). While MACS2 is the most popular peak caller and should be used to generate consistent data, [Yan et al. (2020)](https://genomebiology.biomedcentral.com/track/pdf/10.1186/s13059-020-1929-3) recommend using the peak caller HMMRATAC, developed by [Tarbell et al. (2019)](https://academic.oup.com/nar/article/47/16/e91/5519166), which is specifically developed for ATAC-seq data (if computational resources are sufficient). HMMRATAC is available on [github](https://github.com/LiuLabUB/HMMRATAC).
+In this pipeline, peaks will be called using several alternative software: [MACS2](https://github.com/macs3-project/MACS), [HMMRATAC, developed by Tarbell et al. (2019)](https://academic.oup.com/nar/article/47/16/e91/5519166) and the popular but unpublished [Genrich](https://github.com/jsh58/Genrich). While MACS2 is the most popular peak caller and may be used to generate results consistent with other published data, [Yan et al. (2020)](https://genomebiology.biomedcentral.com/track/pdf/10.1186/s13059-020-1929-3) recommend using the peak caller HMMRATAC, developed by [Tarbell et al. (2019)](https://academic.oup.com/nar/article/47/16/e91/5519166), which is specifically developed for ATAC-seq data (if computational resources are sufficient). HMMRATAC is available on [github](https://github.com/LiuLabUB/HMMRATAC). Genrich also has a dedicated ATAC-seq mode and is particularly popular as many QC steps are built in.
 
 Important considerations for ATAC-seq: 
 - There are usually **no controls**
@@ -280,7 +281,7 @@ The following steps will be carried out:
 3. **Quality control**
 4. Repeat above, calling peaks with HMMRATAC and Genrich
 
-### MACS2 
+### Peak calling - MACS2 
 
 If using paired-end reads, MACS2 will be used with the `-f BAMPE` option, so that MACS2 calculates the pileup for full fragments. Depending on the analysis aims, there are several different options that can be used. The ENCODE3 pipeline uses the `--nomodel --shift -37 --extsize 73` options for analysing ATAC-seq data, to account for the size of nucleosomes. Nucleosomes cover \~145 bp and the ATAC-seq reads need to be shifted towards the 5' end by half this distance.
 
@@ -297,7 +298,7 @@ The output files:
 - `<sample>.broad_peaks.gappedPeak`
 - `<sample>.broad_peaks.xls`
 
-#### Visualisation 
+#### Visualisation, peaks
 
 The <sample>.pileup file can be used to generate a track of -log<sub>10</sub> p-value, by comparing the treatment to the local lamba estimates using the macs2 subcommand, `bdgcmp`:
 
