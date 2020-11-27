@@ -9,16 +9,16 @@ The following steps will be covered:
 
 
 **Pre-alignment processing**
-- [Pre-alignment quality control (QC)](#pre-alignment-qc) 
+- [Pre-alignment quality control (QC)](#pre-alignment-qc): QC reports and adapter trimming
 
 **Alignment, QC and track visualisation**
 - [Alignment](#alignment) 
 - [Post-alignment QC](#post-alignment-qc) - filter, check library complexity and format for peak calling
-- [Bam visualisation, bam to bigWig](#bam-visualisation)
+- [Bam visualisation, bam to bigWig](#bam-visualisation) - generate tracks to visualise the aligned data on a genome browser
 
 **Peak calling, QC and visualisation**
-- [Peak calling](#peak-calling)
-- [Peak calling QC]
+- [Peak calling](#peak-calling) - call peaks using MACS2, HMMRATAC and Genrich
+- [Peak calling QC] - FRiP, transcription start site enrichment, sample reproducibility
 - [Peak visualisation, p-value, peaks and pileup](#peak-visualisation)
 
 **Differential accessibility analysis**
