@@ -122,7 +122,7 @@ The post-alignment QC involves several steps:
 - [Remove ENCODE blacklist regions](#remove-encode-blacklist-regions)
 - [Shift read coordinates](#shift-read-coordinates)
 
-For an ATAC-seq experiment, the number of uniquely mapped reads ***after these steps*** is recommended to be 25 million of 50 million paired-end reads [(Buenrostro et al. 2015)](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4374986/). Specific to ATAC-seq, an additional QC step is to check the fragment size distribution, which is expected to correspond to the length of nucleosomes:
+For an ATAC-seq experiment, the number of uniquely mapped reads ***after these steps*** is recommended to be 25 million for single-end or 50 million paired-end reads [(Buenrostro et al. 2015)](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4374986/). Specific to ATAC-seq, an additional QC step is to check the fragment size distribution, which is expected to correspond to the length of nucleosomes:
 
 - [Assess fragment size distribution](#assess-fragment-size-distribution)
 
@@ -186,6 +186,7 @@ Here we will ***remove*** multi-mapped reads:
 samtools view -h -b -f 2 -F 1548 -q 30 <sample>.rmChrM.bam | samtools sort -o <sample>.filtered.bam
 
 samtools index <sample>.filtered.bam
+
 #To retain multi-mapped reads:
 #samtools view -h -b -f 2 -F 1548 <sample>.rmChrM.bam | samtools sort -n -o <sample>.filtered.bam 
 ```
