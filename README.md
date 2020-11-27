@@ -180,22 +180,14 @@ samtools view -q 30 -c <sample>.marked.bam
 
 A low % of uniquely mapped reads map result from short reads, excessive PCR amplification or problems with the PCR (Bailey et al. 2013). The following code uses the `sam/bam` flags to retain properly mapped pairs (`-f 2`) and to remove reads which fail the platform/vendor QC checks (`-F 512`), duplicate reads (`-F 1024`) and those which are unmapped (`-F 12`). The three flags to be removed can be combined into `-F 1548`, which will remove reads which meet any of the three individual flags
 
-To ***retain*** multi-mapped reads:
-
-```bash
-samtools view -h -b -f 2 -F 1548 <sample>.rmChrM.bam | samtools sort -n -o <sample>.filtered.bam 
-```
-
-To ***remove*** multi-mapped reads:
+Here we will ***remove*** multi-mapped reads:
 
 ```bash
 samtools view -h -b -f 2 -F 1548 -q 30 <sample>.rmChrM.bam | samtools sort -o <sample>.filtered.bam
-```
 
-The output `bam` file, which is now sorted by name, should be indexed: 
-
-```bash
 samtools index <sample>.filtered.bam
+#To retain multi-mapped reads:
+#samtools view -h -b -f 2 -F 1548 <sample>.rmChrM.bam | samtools sort -n -o <sample>.filtered.bam 
 ```
 
 ### Remove ENCODE blacklist regions
@@ -204,6 +196,8 @@ The [ENCODE blacklist regions](https://github.com/Boyle-Lab/Blacklist/), most re
 
 ```bash
 bedtools intersect -nonamecheck -v -abam <sample>.filtered.bam -b hg19-blacklist.v2.bed > <sample>.blacklist-filtered.bam
+
+samtools index <sample>.blacklist-filtered.bam
 ```
 
 ### Shift read coordinates
@@ -215,9 +209,6 @@ We can use the `deeptools` command  `alignmentSieve`.
 
 
 ```bash
-#The bam file must be indexed 
-samtools index <sample>.blacklist-filtered.bam
-
 #The user can set the preferred number of processors 
 alignmentSieve --numberOfProcessors max --ATACshift --blackListFileName hg19-blacklist.v2.bed --bam <sample>.blacklist-filtered.bam -o <sample>.tmp.bam
 
