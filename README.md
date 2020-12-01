@@ -351,7 +351,7 @@ Assuming there is a staisfactory correlation, call peaks on the combined replica
 
 
 ```bash 
-#call peakrs
+#call peaks
 macs2 callpeak -f BAMPE --nomodel --shift -37 --extsize 73 -g hs --keep-dup all --cutoff-analysis -n <sample> -t <sample>_rep1.shifted.bam <sample>_rep2.shifted.bam --outdir macs2/<sample> 2> macs2.log
 ```
 
