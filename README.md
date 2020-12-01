@@ -333,9 +333,11 @@ Number of peaks should be >150,000 and not less than 100,000 (>70,000 in an IDR 
 
 The <sample>.pileup file can be used to generate a track of -log<sub>10</sub> p-value, by comparing the treatment to the local lamba estimates using the macs2 subcommand, `bdgcmp`:
 
+**Generate the *p*-value track:**
+
 ```bash
 #Generate the p-value bedGraph
-macs bdgcmp -t <sample>.broad_treat_pileup.bdg -c  <sample>.broad_control_lambda.bdg -m ppois --o-prefix <sample>
+macs2 bdgcmp -t <sample>.broad_treat_pileup.bdg -c <sample>.broad_control_lambda.bdg -m ppois --o <sample>_ppois.bdg
 
 #Sort the bedGraph file
 sort -k1,1 -k2,2n <sample>_ppois.bdg > <sample>_ppois.sorted.bdg
@@ -347,7 +349,22 @@ fetchChromSizes hg38 > hg38.chrom.sizes
 bedGraphToBigWig <sample>_ppois.sorted.bdg hg38.chrom.sizes > <sample>_macs2_pval.bw
 ```
 
-The `sample>_macs2_pval.bw` output file can visualised in a genome browser, such as UCSC.
+**Generate the fold-change track:**
+
+Run MACS2 bdgcmp to generate fold-enrichment track. The `-m FE` option specifies that fold-enrichment should be calculated.  
+
+```bash
+#Generate the fold-change bedGraph
+macs2 bdgcmp -t <sample>.broad_treat_pileup.bdg -c <sample>.broad_control_lambda.bdg -m FE -o <sample>_FE.bdg 
+
+#Sort the bedGraph file
+sort -k1,1 -k2,2n <sample>_FE.bdg > <sample>_FE.sorted.bdg
+
+#Convert to bigWig
+bedGraphToBigWig <sample>_FE.sorted.bdg hg38.chrom.sizes > <sample>_macs2_FE.bw
+```
+
+The `<sample>_macs2_pval.bw` and `<sample>_macs2_FE.bw` output files can visualised in a genome browser, such as UCSC.
 
 
 ## Differential accessibility 
