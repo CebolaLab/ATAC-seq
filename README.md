@@ -294,7 +294,6 @@ The output files:
 \*The `<sample>_peaks.narrowPeak` can be uploaded and visualised via a genome browser such as UCSC. The `bed` file of peak calls is referred to at this stage as 'relaxed' peak calls, since they are called for individual replicates. Two or more biological replicates will be combined in the next stage to generate a combined set of peaks.
 
 
-
 The total number of peaks can be obtained using `wc -l <sample>_peaks.narrowPeak`. 
 
 ![#f03c15](https://via.placeholder.com/15/f03c15/000000?text=+) **QC value**: input the total number of peaks into the QC spreadsheet.
@@ -339,6 +338,22 @@ bedGraphToBigWig <sample>_ppois.sorted.bdg hg38.chrom.sizes > <sample>_macs2_pva
 The `<sample>_macs2_pval.bw` and `<sample>_macs2_FE.bw` output files can visualised in a genome browser, such as UCSC.
 
 
+### Call peaks for pooled replicates
+
+The step assumes that the ChIP-seq expriment includes *biological replicates* for each treated condition. Best practise requires a combined set of peaks for the pooled replicates to be called. Assuming there are two biological replicates, `rep1` and `rep2`:
+
+First, check the correlation between the replicates using the UCSC tool wigCorrelate:
+
+```bash
+wigCorrelate <sample>_rep1_macs2_FE.bw <sample>_rep2_macs2_FE.bw
+```
+Assuming there is a staisfactory correlation, call peaks on the combined replicates by including all the files in the `macs2 callpeak` command:
+
+
+```bash 
+#call peakrs
+macs2 callpeak -f BAMPE --nomodel --shift -37 --extsize 73 -g hs --keep-dup all --cutoff-analysis -n <sample> -t <sample>_rep1.shifted.bam <sample>_rep2.shifted.bam --outdir macs2/<sample> 2> macs2.log
+```
 
 The number of peaks within a replicated peak file should be >150,000, though values >100,000 may be acceptable. 
 The number of peaks within an IDR peak file should be >70,000, though values >50,000 may be acceptable.
