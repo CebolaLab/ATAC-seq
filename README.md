@@ -258,21 +258,20 @@ bamCoverage --numberOfProcessors 8 --binSize 10 --normalizeUsing RPGC \
 
 Peaks are identified where sequenced reads accumulate. These correspond to regions of accessible DNA.
 
-In this pipeline, peaks will be called using several alternative software: [MACS2](https://github.com/macs3-project/MACS), [HMMRATAC, developed by Tarbell et al. (2019)](https://academic.oup.com/nar/article/47/16/e91/5519166) and the popular but unpublished [Genrich](https://github.com/jsh58/Genrich). While MACS2 is the most popular peak caller and may be used to generate results consistent with other published data, [Yan et al. (2020)](https://genomebiology.biomedcentral.com/track/pdf/10.1186/s13059-020-1929-3) recommend using the peak caller HMMRATAC, developed by [Tarbell et al. (2019)](https://academic.oup.com/nar/article/47/16/e91/5519166), which is specifically developed for ATAC-seq data (if computational resources are sufficient). HMMRATAC is available on [github](https://github.com/LiuLabUB/HMMRATAC). Genrich also has a dedicated ATAC-seq mode and is particularly popular as many QC steps are built in.
+In this pipeline, peaks will be called using several alternative software: [MACS2](https://github.com/macs3-project/MACS), [HMMRATAC, developed by Tarbell et al. (2019)](https://academic.oup.com/nar/article/47/16/e91/5519166) and the popular but unpublished [Genrich](https://github.com/jsh58/Genrich). While MACS2 is the most popular peak caller and may be used to generate results consistent with other published data, [Yan et al. (2020)](https://genomebiology.biomedcentral.com/track/pdf/10.1186/s13059-020-1929-3) recommend using the peak caller HMMRATAC, developed by [Tarbell et al. (2019)](https://academic.oup.com/nar/article/47/16/e91/5519166), which is specifically developed for ATAC-seq data (if computational resources are sufficient). HMMRATAC is available on [github](https://github.com/LiuLabUB/HMMRATAC). Genrich also has a dedicated ATAC-seq mode and is particularly popular as many QC steps are built in. First, MACS2 will be used to call peaks.
 
 Important considerations for ATAC-seq: 
 - There are usually **no controls**
 - The Tn5 transposase has a binding preference, resulting in a GC bias which should be corrected for during peak calling
 - Repair of the transposase-induced nick introduces a 9bp insertion (completed above). 
 
+### Peak calling - MACS2 
+
 The following steps will be carried out:
 
-1. **Call peaks**: MACS2
-2. **Visualise**: generate -log<sub>10</sub> p-value bigwig tracks for MACS2 peaks
-3. **Quality control**
-4. Repeat above, calling peaks with HMMRATAC and Genrich
-
-### Peak calling - MACS2 
+1. Call peaks for individual replicates
+2. Call replicated peaks for the pooled replicates
+3. Call 'high-confidence' IDR peaks.
 
 If using paired-end reads, MACS2 will be used with the `-f BAMPE` option, so that MACS2 calculates the pileup for full fragments. Depending on the analysis aims, there are several different options that can be used. The ENCODE3 pipeline uses the `--nomodel --shift -37 --extsize 73` options for analysing ATAC-seq data, to account for the size of nucleosomes. Nucleosomes cover \~145 bp and the ATAC-seq reads need to be shifted towards the 5' end by half this distance.
 
@@ -283,11 +282,78 @@ macs2 callpeak -f BAMPE --nomodel --shift -37 --extsize 73 -g hs --keep-dup all 
 
 The output files:
 
-- `<sample>.broad_treat_pileup.bdg`
-- `<sample>.broad_control_lambda.bdg`
-- `<sample>.broad_peaks.broadPeak`
-- `<sample>.broad_peaks.gappedPeak`
-- `<sample>.broad_peaks.xls`
+- `_broad_treat_pileup.bdg`: bedGraph format for the treatment sample
+- `_broad_control_lambda.bdg`: bedGraph format for the background note
+- `_broad_peaks.broadPeak`: a BED6+4 file detailing the peak locations, along with the peak summits, *p*-value and *q*-values 
+- `_broad_peaks.gappedPeak`
+- `_broad_peaks.xls`: a tabular file containing addition information, such as pileup and fold-enrichment.
+
+
+![#1589F0](https://via.placeholder.com/15/1589F0/000000?text=+) **Output file**: the `_broad_peaks.broadPeak` is a `bed` file containing the peak information for the INDIVIDUAL replicate\*.
+
+\*The `<sample>_peaks.narrowPeak` can be uploaded and visualised via a genome browser such as UCSC. The `bed` file of peak calls is referred to at this stage as 'relaxed' peak calls, since they are called for individual replicates. Two or more biological replicates will be combined in the next stage to generate a combined set of peaks.
+
+
+
+The total number of peaks can be obtained using `wc -l <sample>_peaks.narrowPeak`. 
+
+![#f03c15](https://via.placeholder.com/15/f03c15/000000?text=+) **QC value**: input the total number of peaks into the QC spreadsheet.
+
+
+From these output files, we will generate:
+
+1. A `bigWig` track of the fold-enrichment (treatment over the background)
+2. A `bigWig` track of the -log<sub>10</sub> *p*-value (treatment over the background)
+
+
+**1. Fold-enrichment bigWig**
+
+The following commands require an input file detailing the chromosome sizes. Use the UCSC tool `fetchChromSizes` (install via [conda](https://anaconda.org/bioconda/ucsc-fetchchromsizes)): `fetchChromSizes hg38 > hg38.chrom.sizes`
+
+```bash
+#Generate the fold-change bedGraph
+macs2 bdgcmp -t <sample>.broad_treat_pileup.bdg -c <sample>.broad_control_lambda.bdg -m FE -o <sample>_FE.bdg 
+
+#Sort the bedGraph file and convert to bigWig
+sort -k1,1 -k2,2n <sample>_FE.bdg > <sample>_FE.sorted.bdg
+
+bedGraphToBigWig <sample>_FE.sorted.bdg hg38.chrom.sizes > <sample>_macs2_FE.bw
+```
+
+![#1589F0](https://via.placeholder.com/15/1589F0/000000?text=+) **Output file**: `<sample>_macs2_FE.bw`
+
+**2. -log<sub>10</sub> *p*-value bigWig**
+
+```bash
+#Generate the p-value bedGraph
+macs2 bdgcmp -t <sample>.broad_treat_pileup.bdg -c <sample>.broad_control_lambda.bdg -m ppois --o <sample>_ppois.bdg
+
+#Sort the bedGraph file and convert to bigWig
+sort -k1,1 -k2,2n <sample>_ppois.bdg > <sample>_ppois.sorted.bdg
+
+bedGraphToBigWig <sample>_ppois.sorted.bdg hg38.chrom.sizes > <sample>_macs2_pval.bw
+```
+
+![#1589F0](https://via.placeholder.com/15/1589F0/000000?text=+) **Output file**: `<sample>_macs2_pval.bw`
+
+The `<sample>_macs2_pval.bw` and `<sample>_macs2_FE.bw` output files can visualised in a genome browser, such as UCSC.
+
+
+
+The number of peaks within a replicated peak file should be >150,000, though values >100,000 may be acceptable. 
+The number of peaks within an IDR peak file should be >70,000, though values >50,000 may be acceptable.
+A nucleosome free region (NFR) must be present.
+A mononucleosome peak must be present in the fragment length distribution. These are reads that span a single nucleosome, so they are longer than 147 bp but shorter than 147*2 bp. Good ATAC-seq datasets have reads that span nucleosomes (which allows for calling nucleosome positions in addition to open regions of chromatin).
+
+
+1. **Call peaks**: MACS2
+2. **Visualise**: generate -log<sub>10</sub> p-value bigwig tracks for MACS2 peaks
+3. **Quality control**
+4. Repeat above, calling peaks with HMMRATAC and Genrich
+
+
+The number of peaks within a replicated peak file should be >150,000, though values >100,000 may be acceptable. The number of peaks within an IDR peak file should be >70,000, though values >50,000 may be acceptable.
+
 
 ### HMMRATAC
 
@@ -327,44 +393,6 @@ See [ENCODE ATAC-seq data standards and prototype processing pipeline](https://w
 - Compare normalisation methods and systematic biases
 
 Number of peaks should be >150,000 and not less than 100,000 (>70,000 in an IDR file)
-
-
-## Peak visualisation 
-
-The <sample>.pileup file can be used to generate a track of -log<sub>10</sub> p-value, by comparing the treatment to the local lamba estimates using the macs2 subcommand, `bdgcmp`:
-
-**Generate the *p*-value track:**
-
-```bash
-#Generate the p-value bedGraph
-macs2 bdgcmp -t <sample>.broad_treat_pileup.bdg -c <sample>.broad_control_lambda.bdg -m ppois --o <sample>_ppois.bdg
-
-#Sort the bedGraph file
-sort -k1,1 -k2,2n <sample>_ppois.bdg > <sample>_ppois.sorted.bdg
-
-#Convert it to bigWig using the bedGraphToBigWig executable
-fetchChromSizes hg38 > hg38.chrom.sizes
-
-#Convert to bigWig
-bedGraphToBigWig <sample>_ppois.sorted.bdg hg38.chrom.sizes > <sample>_macs2_pval.bw
-```
-
-**Generate the fold-change track:**
-
-Run MACS2 bdgcmp to generate fold-enrichment track. The `-m FE` option specifies that fold-enrichment should be calculated.  
-
-```bash
-#Generate the fold-change bedGraph
-macs2 bdgcmp -t <sample>.broad_treat_pileup.bdg -c <sample>.broad_control_lambda.bdg -m FE -o <sample>_FE.bdg 
-
-#Sort the bedGraph file
-sort -k1,1 -k2,2n <sample>_FE.bdg > <sample>_FE.sorted.bdg
-
-#Convert to bigWig
-bedGraphToBigWig <sample>_FE.sorted.bdg hg38.chrom.sizes > <sample>_macs2_FE.bw
-```
-
-The `<sample>_macs2_pval.bw` and `<sample>_macs2_FE.bw` output files can visualised in a genome browser, such as UCSC.
 
 
 ## Differential accessibility 
