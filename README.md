@@ -201,7 +201,6 @@ bedtools intersect -nonamecheck -v -abam <sample>.filtered.bam -b hg19-blacklist
 
 #Sort and index the bam file
 samtools sort -O bam -o <sample>.blacklist-filtered.bam <sample>.tmp.bam
-
 samtools index <sample>.blacklist-filtered.bam
 
 rm <sample>.tmp.bam
