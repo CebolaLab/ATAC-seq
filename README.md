@@ -197,10 +197,14 @@ The [ENCODE blacklist regions](https://github.com/Boyle-Lab/Blacklist/), most re
 
 ```bash
 #Remove reads within the blacklist regions
-bedtools intersect -nonamecheck -v -abam <sample>.filtered.bam -b hg19-blacklist.v2.bed > <sample>.blacklist-filtered.bam
+bedtools intersect -nonamecheck -v -abam <sample>.filtered.bam -b hg19-blacklist.v2.bed > <sample>.tmp.bam
 
-#Index the bam file
+#Sort and index the bam file
+samtools sort -O bam -o <sample>.blacklist-filtered.bam <sample>.tmp.bam
+
 samtools index <sample>.blacklist-filtered.bam
+
+rm <sample>.tmp.bam
 ```
 
 ### Shift read coordinates
