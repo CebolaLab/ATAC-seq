@@ -253,7 +253,7 @@ The `deeptools` command `bamCoverage` will be used. The input to `bamCoverage` (
 # bam to bigwig
 # Set your preferred number of processors
 bamCoverage --numberOfProcessors 8 --binSize 10 --normalizeUsing RPGC \
-  --effectiveGenomeSize 2862010578 --bam <sample>.shifted.bam -o <sample>.shifted.bw
+  --effectiveGenomeSize 2862010578 --bam <sample>.shifted.bam -o <sample>.alignment.bw
 ```	
 
 ## Peak calling
@@ -279,7 +279,7 @@ If using paired-end reads, MACS2 will be used with the `-f BAMPE` option, so tha
 
 ```bash 
 #call peakrs
-macs2 callpeak -f BAMPE --nomodel --shift -37 --extsize 73 -g hs --keep-dup all --cutoff-analysis -n <sample> -t <sample>.shifted.bam --outdir macs2/<sample> 2> macs2.log
+macs2 callpeak -f BAMPE --nomodel --shift -37 --extsize 73 -G 2862010578 --keep-dup all --cutoff-analysis -n <sample> -t <sample>.shifted.bam --outdir macs2/<sample> 2> macs2.log
 ```
 
 The output files:
