@@ -246,15 +246,14 @@ The <sample>.shifted.bam file should be analysed in the following steps.
 
 Through this pipeline, two types of tracks will be generated for visualisation in genome browsers. The first, generated here, will show the aligned reads and are generated from the processed `bam` file. The second, generated after peak calling, will show the -log<sub>10</sub> p-value from the peak calling.
 
-The `deeptools` command `bamCoverage` will be used. ATAC-seq data is commonly normalised to the effective genome size...
-
-**TO BE COMPLETED**
+The `deeptools` command `bamCoverage` will be used. The input to `bamCoverage` (see below) requires the effective genome size to be estimated; a table is provided [at this link](https://deeptools.readthedocs.io/en/latest/content/feature/effectiveGenomeSize.html). Select the appropriate value depending on the read length and reference genome. 
 
 ```bash
+#2862010578 is the effective genome size for GRCh38 when using 150bp reads and including only regions which are uniquely mappable
 # bam to bigwig
 # Set your preferred number of processors
 bamCoverage --numberOfProcessors 8 --binSize 10 --normalizeUsing RPGC \
-  --effectiveGenomeSize $effect_genome_size --bam <sample>.shifted.bam -o <sample>.shifted.bw
+  --effectiveGenomeSize 2862010578 --bam <sample>.shifted.bam -o <sample>.shifted.bw
 ```	
 
 ## Peak calling
