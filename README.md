@@ -331,7 +331,7 @@ bedGraphToBigWig <sample>_ppois.sorted.bdg hg38.chrom.sizes > <sample>_macs2_pva
 
 The `<sample>_macs2_pval.bw` and `<sample>_macs2_FE.bw` output files can visualised in a genome browser, such as UCSC.
 
-### QC - FRiP
+### QC - fraction of reads in peak (FRiP score)
 
 One quality metric for peak calling is to calculate the fraction of reads in peak (FRiP) score. For ATAC-seq, the FRiP score is recommended to be >0.2, with >0.3 as optimal. We will use featureCounts from the SourceForge Subread package. Install Subread using `conda install -c bioconda subread` (or see [this link](http://bioinf.wehi.edu.au/featureCounts/) to install from the source).
 
