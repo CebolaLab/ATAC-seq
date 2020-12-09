@@ -309,7 +309,7 @@ From these output files, we will generate:
 
 **1. Fold-enrichment bigWig**
 
-The following commands require an input file detailing the chromosome sizes. Use the UCSC tool `fetchChromSizes` (install via [conda](https://anaconda.org/bioconda/ucsc-fetchchromsizes)): `fetchChromSizes hg38 > hg38.chrom.sizes`
+The following commands require an input file detailing the chromosome sizes. Use the UCSC tool `fetchChromSizes` (install via [conda](https://anaconda.org/bioconda/ucsc-fetchchromsizes)): `fetchChromSizes hg38 > hg38.chrom.sizes`. Conda can also be used to install `conda install -c bioconda ucsc-bedgraphtobigwig`.
 
 ```bash
 #Generate the fold-change bedGraph
