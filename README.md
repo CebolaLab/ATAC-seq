@@ -293,10 +293,10 @@ The output files:
 
 ![#1589F0](https://via.placeholder.com/15/1589F0/000000?text=+) **Output file**: the `_broad_peaks.broadPeak` is a `bed` file containing the peak information for the INDIVIDUAL replicate\*.
 
-\*The `<sample>_peaks.narrowPeak` can be uploaded and visualised via a genome browser such as UCSC. The `bed` file of peak calls is referred to at this stage as 'relaxed' peak calls, since they are called for individual replicates. Two or more biological replicates will be combined in the next stage to generate a combined set of peaks.
+\*The `<sample>_peaks.broadPeak` can be uploaded and visualised via a genome browser such as UCSC. The `bed` file of peak calls is referred to at this stage as 'relaxed' peak calls, since they are called for individual replicates. Two or more biological replicates will be combined in the next stage to generate a combined set of peaks.
 
 
-The total number of peaks can be obtained using `wc -l <sample>_peaks.narrowPeak`. 
+The total number of peaks can be obtained using `wc -l <sample>_peaks.broadPeak`. 
 
 ![#f03c15](https://via.placeholder.com/15/f03c15/000000?text=+) **QC value**: input the total number of peaks into the QC spreadsheet.
 
@@ -342,23 +342,44 @@ The `<sample>_macs2_pval.bw` and `<sample>_macs2_FE.bw` output files can visuali
 
 ### Call peaks for pooled replicates
 
-The step assumes that the ChIP-seq expriment includes *biological replicates* for each treated condition. Best practise requires a combined set of peaks for the pooled replicates to be called. Assuming there are two biological replicates, `rep1` and `rep2`:
+The step assumes that the ATAC-seq expriment includes *biological replicates* for each treated condition. Best practise requires a combined set of peaks for the pooled replicates to be called. The following code assumes that there are two biological replicates, `rep1` and `rep2`, but the same can be run for any number of replicates.
 
-First, check the correlation between the replicates using the UCSC tool wigCorrelate:
+First, check the correlation between the replicates using the UCSC tool wigCorrelate (`conda install -c bioconda ucsc-wigCorrelate`):
 
 ```bash
 wigCorrelate <sample>_rep1_macs2_FE.bw <sample>_rep2_macs2_FE.bw
 ```
+
 Assuming there is a staisfactory correlation, call peaks on the combined replicates by including all the files in the `macs2 callpeak` command:
 
 
 ```bash 
 #call peaks
-macs2 callpeak -f BAMPE --nomodel --shift -37 --extsize 73 -g hs --keep-dup all --cutoff-analysis -n <sample> -t <sample>_rep1.shifted.bam <sample>_rep2.shifted.bam --outdir macs2/<sample> 2> macs2.log
+macs2 callpeak -f BAMPE --nomodel --shift -37 --extsize 73 -B --broad -g 2862010578 --keep-dup all --cutoff-analysis -n <sample>_pooled -t <sample>_rep1.shifted.bam <sample>_rep2.shifted.bam --outdir macs2/<sample>_pooled 2> macs2_<sample>_pooled.log
 ```
 
-The number of peaks within a replicated peak file should be >150,000, though values >100,000 may be acceptable. 
-The number of peaks within an IDR peak file should be >70,000, though values >50,000 may be acceptable.
+![#1589F0](https://via.placeholder.com/15/1589F0/000000?text=+) **Output file**: `_pooled_broad_peaks.broadPeak`
+
+### Extract replicated peaks
+
+Recpliated peaks are defined by ENCODE as peaks present in the pooled peaks, as well as in *both* replicates. *The following code is adapted from the ENCODE pipeline.* As done by ENCODE, overlapping peaks should overlap by at least 50% for either of the two peaks. First, the pooled peaks will be subsetted for those which overlap replicate 1, then further subsetted for those which also overlap replicate 2. 
+
+**For broad peaks:** 
+
+```bash
+#Identify peaks from the POOLED replicates which are in BOTH replicate 1 and replicate 2
+
+#First extract pooled peaks which are in replicate 1
+intersectBed -wa -a <sample>_pooled.broadPeak -b <sample>_rep2_peaks.broadPeak  | awk 'BEGIN {FS="\t" ; OFS = "\t"} {s1=$3-$2 ; s2=$12-$11; if(($19/s1 > 0.5) || ($19/s2 > 0.5)) {print $0}}' | cut -f 1-9 > tmp.bed
+
+#Next, take these peaks and extract the ones which overlap with replicate 2
+intersectBed -wa -a tmp.bed -b <sample>_rep1_peaks.broadPeak | awk_command | cut_command > tmp_pooled | awk 'BEGIN {FS="\t" ; OFS = "\t"} {s1=$3-$2 ; s2=$12-$11; if(($19/s1 > 0.5) || ($19/s2 > 0.5)) {print $0}}' | cut -f 1-9 > replicated_broadPeak.bed
+```
+
+![#1589F0](https://via.placeholder.com/15/1589F0/000000?text=+) **Output file**: `replicated_broadPeak.bed`
+
+The number of peaks within a replicated peak file should be >150,000, though values >100,000 may be acceptable. Check this using `wc -l`.
+
 A nucleosome free region (NFR) must be present.
 A mononucleosome peak must be present in the fragment length distribution. These are reads that span a single nucleosome, so they are longer than 147 bp but shorter than 147*2 bp. Good ATAC-seq datasets have reads that span nucleosomes (which allows for calling nucleosome positions in addition to open regions of chromatin).
 
