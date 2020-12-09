@@ -27,21 +27,13 @@ The following steps will be covered:
 
 ## Pre-alignment QC
 
-Samples which have been sequenced on multiple lanes can be concatenated at this stage [optional].
-
-```
-cat  <sample>.lane1.R1.fastq.gz  <sample>.lane2.R1.fastq.gz  >  <sample>.R1.fastq.gz
-
-cat  <sample>.lane1.R2.fastq.gz  <sample>.lane2.R2.fastq.gz  >  <sample>.R2.fastq.gz
-```
-
 Independent replicates should be processed separately.
 
 ### Initial QC report
 
 The raw sequence data should first be assessed for quality. [FastQC reports](https://dnacore.missouri.edu/PDF/FastQC_Manual.pdf) can be generated for all samples to assess sequence quality, GC content, duplication rates, length distribution, K-mer content and adapter contamination. In ATAC-seq data, it is likely that Nextera sequencing adapters will be over-represented. As described by [Yan et al. (2020)](https://genomebiology.biomedcentral.com/track/pdf/10.1186/s13059-020-1929-3), base quality should be high although may drop slightly at the 3' end, while GC content and read length should be consistent with the expected values. For paired-end reads, run fastqc on both files, with the results output to the current directory:
 
-```
+```bash
 fastqc <sample>_R1.fastq.gz -d . -o .
 
 fastqc <sample>_R2.fastq.gz -d . -o .
@@ -90,6 +82,8 @@ Bowtie2 should be used to create the reference genome index files (see the bowti
 #set the bt2idx variable to the directory with the reference genome and indexes
 bt2idx=/path/to/reference-genome
 ```
+
+**IMPORTANT**: if your sample has been sequenced across multiple lanes, these files can be combined in the bowtie command. The `-1` and `-2` arguments can accept a comma-seperated list of files.
 
 To align to hg19/b37:
 ```bash
@@ -210,9 +204,7 @@ rm <sample>.tmp.bam
 
 An optional step in analysing data generated using the Tn5 transposase (such as ATAC-seq, ChIPmentation etc.) is to account for a small DNA insertion, introducted as repair of the transposase-induced nick introduces a 9bp insertion. Reads aligning to the + strand should be offset by +4bp and reads aligned to the -ve strand should be offset by -5bp. For references, see the first ATAC-seq paper by [Buenrostro et al., (2013)](https://www.nature.com/articles/nmeth.2688) and the analysis by [Adey et al., (2010)](https://genomebiology.biomedcentral.com/articles/10.1186/gb-2010-11-12-r119) which showed this insertion bias. Shifting coordinates is only really important if single-base resolution is required, for example in the analysis of transcription factor motifs in ATAC-seq peak footprints. Be aware that some tools do this shifting themselves (so double check manuals!).
  
-
 We can use the `deeptools` command  `alignmentSieve`.
-
 
 ```bash
 #The user can set the preferred number of processors 
@@ -291,7 +283,7 @@ The output files:
 - `_broad_peaks.xls`: a tabular file containing addition information, such as pileup and fold-enrichment.
 
 
-![#1589F0](https://via.placeholder.com/15/1589F0/000000?text=+) **Output file**: the `_broad_peaks.broadPeak` is a `bed` file containing the peak information for the INDIVIDUAL replicate\*.
+![#1589F0](https://via.placeholder.com/15/1589F0/000000?text=+) **Output file**: the `<sample>_broad_peaks.broadPeak` is a `bed` file containing the peak information for the INDIVIDUAL replicate\*.
 
 \*The `<sample>_peaks.broadPeak` can be uploaded and visualised via a genome browser such as UCSC. The `bed` file of peak calls is referred to at this stage as 'relaxed' peak calls, since they are called for individual replicates. Two or more biological replicates will be combined in the next stage to generate a combined set of peaks.
 
@@ -339,6 +331,19 @@ bedGraphToBigWig <sample>_ppois.sorted.bdg hg38.chrom.sizes > <sample>_macs2_pva
 
 The `<sample>_macs2_pval.bw` and `<sample>_macs2_FE.bw` output files can visualised in a genome browser, such as UCSC.
 
+### QC - FRiP
+
+One quality metric for peak calling is to calculate the fraction of reads in peak (FRiP) score. For ATAC-seq, the FRiP score is recommended to be >0.2, with >0.3 as optimal. We will use featureCounts from the SourceForge Subread package. Install Subread using `conda install -c bioconda subread` (or see [this link](http://bioinf.wehi.edu.au/featureCounts/) to install from the source).
+
+```bash
+### covert BED (the peaks) to SAF
+$ awk 'BEGIN{FS=OFS="\t"; print "GeneID\tChr\tStart\tEnd\tStrand"}{print $4, $1, $2+1, $3, "."}' <sample>_peaks.broadPeak > <sample>_peaks.saf
+
+### count
+$ featureCounts -p -a <sample>_peaks.saf -F SAF -o readCountInPeaks.txt <sample>.sorted.marked.filtered.shifted.bam
+```
+
+![#f03c15](https://via.placeholder.com/15/f03c15/000000?text=+) **QC value**: input the FRiP score into the QC spreadsheet.
 
 ### Call peaks for pooled replicates
 
@@ -350,7 +355,7 @@ First, check the correlation between the replicates using the UCSC tool wigCorre
 wigCorrelate <sample>_rep1_macs2_FE.bw <sample>_rep2_macs2_FE.bw
 ```
 
-Assuming there is a staisfactory correlation, call peaks on the combined replicates by including all the files in the `macs2 callpeak` command:
+Assuming there is a satisfactory correlation, call peaks on the combined replicates by including all the files in the `macs2 callpeak` command:
 
 
 ```bash 
@@ -358,40 +363,31 @@ Assuming there is a staisfactory correlation, call peaks on the combined replica
 macs2 callpeak -f BAMPE --nomodel --shift -37 --extsize 73 -B --broad -g 2862010578 --keep-dup all --cutoff-analysis -n <sample>_pooled -t <sample>_rep1.shifted.bam <sample>_rep2.shifted.bam --outdir macs2/<sample>_pooled 2> macs2_<sample>_pooled.log
 ```
 
-![#1589F0](https://via.placeholder.com/15/1589F0/000000?text=+) **Output file**: `_pooled_broad_peaks.broadPeak`
+![#1589F0](https://via.placeholder.com/15/1589F0/000000?text=+) **Output file**: `<sample>_pooled_broad_peaks.broadPeak`
 
 ### Extract replicated peaks
 
-Recpliated peaks are defined by ENCODE as peaks present in the pooled peaks, as well as in *both* replicates. *The following code is adapted from the ENCODE pipeline.* As done by ENCODE, overlapping peaks should overlap by at least 50% for either of the two peaks. First, the pooled peaks will be subsetted for those which overlap replicate 1, then further subsetted for those which also overlap replicate 2. 
+*The following code is adapted from the ENCODE pipeline.* 
 
-**For broad peaks:** 
+Replicated peaks are defined by ENCODE as peaks present in the *pooled* analysis, as well as in *both* replicates. ENCODE require replicated peaks to overlap by at least 50% for either of the two peaks. First, the pooled peaks will be subsetted for those which overlap replicate 1, then further subsetted for those which also overlap replicate 2. 
+
 
 ```bash
+#For BROAD peaks.
 #Identify peaks from the POOLED replicates which are in BOTH replicate 1 and replicate 2
 
 #First extract pooled peaks which are in replicate 1
-intersectBed -wa -a <sample>_pooled.broadPeak -b <sample>_rep2_peaks.broadPeak  | awk 'BEGIN {FS="\t" ; OFS = "\t"} {s1=$3-$2 ; s2=$12-$11; if(($19/s1 > 0.5) || ($19/s2 > 0.5)) {print $0}}' | cut -f 1-9 > tmp.bed
+intersectBed -wa -a <sample>_pooled.broadPeak -b <sample>_rep1_peaks.broadPeak  | awk 'BEGIN {FS="\t" ; OFS = "\t"} {s1=$3-$2 ; s2=$12-$11; if(($19/s1 > 0.5) || ($19/s2 > 0.5)) {print $0}}' | cut -f 1-9 > tmp.bed
 
-#Next, take these peaks and extract the ones which overlap with replicate 2
-intersectBed -wa -a tmp.bed -b <sample>_rep1_peaks.broadPeak | awk_command | cut_command > tmp_pooled | awk 'BEGIN {FS="\t" ; OFS = "\t"} {s1=$3-$2 ; s2=$12-$11; if(($19/s1 > 0.5) || ($19/s2 > 0.5)) {print $0}}' | cut -f 1-9 > replicated_broadPeak.bed
+#Next, take these peaks and extract the ones which also overlap with replicate 2
+intersectBed -wa -a tmp.bed -b <sample>_rep2_peaks.broadPeak | awk_command | cut_command > tmp_pooled | awk 'BEGIN {FS="\t" ; OFS = "\t"} {s1=$3-$2 ; s2=$12-$11; if(($19/s1 > 0.5) || ($19/s2 > 0.5)) {print $0}}' | cut -f 1-9 > <sample>.replicated_broadPeak.bed
 ```
 
-![#1589F0](https://via.placeholder.com/15/1589F0/000000?text=+) **Output file**: `replicated_broadPeak.bed`
+![#1589F0](https://via.placeholder.com/15/1589F0/000000?text=+) **Output file**: `<sample>.replicated_broadPeak.bed`
 
 The number of peaks within a replicated peak file should be >150,000, though values >100,000 may be acceptable. Check this using `wc -l`.
 
-A nucleosome free region (NFR) must be present.
-A mononucleosome peak must be present in the fragment length distribution. These are reads that span a single nucleosome, so they are longer than 147 bp but shorter than 147*2 bp. Good ATAC-seq datasets have reads that span nucleosomes (which allows for calling nucleosome positions in addition to open regions of chromatin).
-
-
-1. **Call peaks**: MACS2
-2. **Visualise**: generate -log<sub>10</sub> p-value bigwig tracks for MACS2 peaks
-3. **Quality control**
-4. Repeat above, calling peaks with HMMRATAC and Genrich
-
-
-The number of peaks within a replicated peak file should be >150,000, though values >100,000 may be acceptable. The number of peaks within an IDR peak file should be >70,000, though values >50,000 may be acceptable.
-
+****STOP HERE****
 
 ### HMMRATAC
 
