@@ -358,12 +358,12 @@ First, check the correlation between the replicates using the UCSC tool wigCorre
 wigCorrelate <sample>_rep1_macs2_FE.bw <sample>_rep2_macs2_FE.bw
 ```
 
-Assuming there is a satisfactory correlation, call peaks on the combined replicates by including all the files in the `macs2 callpeak` command:
+Assuming there is a satisfactory correlation, call peaks on the combined replicates by including all the files in the `macs2 callpeak` command. First, ensure all samples have been converted to `BEDPE` format using `macs2 randsample`.
 
 
 ```bash 
 #call peaks
-macs2 callpeak -f BAMPE --nomodel --shift -37 --extsize 73 -B --broad -g 2862010578 --keep-dup all --cutoff-analysis -n <sample>_pooled -t <sample>_rep1.shifted.bam <sample>_rep2.shifted.bam --outdir macs2/<sample>_pooled 2> macs2_<sample>_pooled.log
+macs2 callpeak -f BEDPE --nomodel --shift -37 --extsize 73 -B --broad -g 2862010578 --keep-dup all --cutoff-analysis -n <sample>_pooled -t <sample>_rep1.bed <sample>_rep2.bed --outdir macs2/<sample>_pooled 2> macs2_<sample>_pooled.log
 ```
 
 ![#1589F0](https://via.placeholder.com/15/1589F0/000000?text=+) **Output file**: `<sample>_pooled_broad_peaks.broadPeak`
