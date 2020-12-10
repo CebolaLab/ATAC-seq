@@ -267,11 +267,14 @@ The following steps will be carried out:
 2. Call replicated peaks for the pooled replicates
 3. Call 'high-confidence' IDR peaks.
 
-If using paired-end reads, MACS2 will be used with the `-f BAMPE` option, so that MACS2 calculates the pileup for full fragments. Depending on the analysis aims, there are several different options that can be used. The ENCODE3 pipeline uses the `--nomodel --shift -37 --extsize 73` options for analysing ATAC-seq data, to account for the size of nucleosomes. Nucleosomes cover \~145 bp and the ATAC-seq reads need to be shifted towards the 5' end by half this distance.
+If using paired-end reads, MACS2 will be used with the `-f BEDPE` option. Depending on the analysis aims, there are several different options that can be used. The ENCODE3 pipeline uses the `--nomodel --shift -37 --extsize 73` options for analysing ATAC-seq data, to account for the size of nucleosomes. Nucleosomes cover \~145 bp and the ATAC-seq reads need to be shifted towards the 5' end by half this distance.
 
 ```bash 
-#call peakrs
-macs2 callpeak -f BAMPE --nomodel --shift -37 --extsize 73 -g 2862010578 -B --broad --keep-dup all --cutoff-analysis -n <sample> -t <sample>.shifted.bam --outdir macs2/<sample> 2> macs2.log
+#Convert the bam file to BEDPE
+macs2 randsample -i <sample>.shifted.bam -f BAMPE -p 100 -o <sample>.bed
+
+#Call peaks
+macs2 callpeak -f BEDPE --nomodel --shift -37 --extsize 73 -g 2862010578 -B --broad --keep-dup all --cutoff-analysis -n <sample> -t <sample>.bed --outdir macs2/<sample> 2> macs2.log
 ```
 
 The output files:
@@ -337,10 +340,10 @@ One quality metric for peak calling is to calculate the fraction of reads in pea
 
 ```bash
 ### covert BED (the peaks) to SAF
-$ awk 'BEGIN{FS=OFS="\t"; print "GeneID\tChr\tStart\tEnd\tStrand"}{print $4, $1, $2+1, $3, "."}' <sample>_peaks.broadPeak > <sample>_peaks.saf
+awk 'BEGIN{FS=OFS="\t"; print "GeneID\tChr\tStart\tEnd\tStrand"}{print $4, $1, $2+1, $3, "."}' <sample>_peaks.broadPeak > <sample>_peaks.saf
 
 ### count
-$ featureCounts -p -a <sample>_peaks.saf -F SAF -o readCountInPeaks.txt <sample>.sorted.marked.filtered.shifted.bam
+featureCounts -p -a <sample>_peaks.saf -F SAF -o readCountInPeaks.txt <sample>.shifted.bam
 ```
 
 ![#f03c15](https://via.placeholder.com/15/f03c15/000000?text=+) **QC value**: input the FRiP score into the QC spreadsheet.
