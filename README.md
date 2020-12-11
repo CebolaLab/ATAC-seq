@@ -236,7 +236,7 @@ bam1 <- shiftGAlignmentsList(gal)
 export(bam1, "shifted.bam")
 ```
 
-Using `bash` again, sort and index the shifted bam file:
+Using `bash` again, run the `Rscript.sh`, then sort and index the shifted bam file:
 
 ```bash
 #Run on the bash command line
