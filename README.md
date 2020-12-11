@@ -203,19 +203,46 @@ rm <sample>.tmp.bam
 ### Shift read coordinates
 
 An optional step in analysing data generated using the Tn5 transposase (such as ATAC-seq, ChIPmentation etc.) is to account for a small DNA insertion, introducted as repair of the transposase-induced nick introduces a 9bp insertion. Reads aligning to the + strand should be offset by +4bp and reads aligned to the -ve strand should be offset by -5bp. For references, see the first ATAC-seq paper by [Buenrostro et al., (2013)](https://www.nature.com/articles/nmeth.2688) and the analysis by [Adey et al., (2010)](https://genomebiology.biomedcentral.com/articles/10.1186/gb-2010-11-12-r119) which showed this insertion bias. Shifting coordinates is only really important if single-base resolution is required, for example in the analysis of transcription factor motifs in ATAC-seq peak footprints. Be aware that some tools do this shifting themselves (so double check manuals!).
- 
-We can use the `deeptools` command  `alignmentSieve`.
+
+We can use the ATACseqQC *R* package. 
+
+If using conda, ensure to install `r-base` and `r-essentials`. (R scripts can be run from the `bash` command line using `Rscript script.R`). Open R and install the following packages:
+
+```R
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+
+BiocManager::install("BSgenome.Hsapiens.UCSC.hg38")
+BiocManager::install("ATACseqQC")
+BiocManager::install("Rsamtools")
+```
+
+The following should be written as an R script:
+
+```R
+#RUN AS AN R script
+library(BSgenome.Hsapiens.UCSC.hg38)
+library(ATACseqQC)
+library(Rsamtools)
+
+## bamfile tags to be read in
+tags <- c("AS", "XN", "XM", "XO", "XG", "NM", "MD", "YS", "YT")
+## files will be output into outPath
+## shift the coordinates of 5'ends of alignments in the bam file
+which <- as(seqinfo(Hsapiens), "GRanges")
+which=which[seqnames(which) %in% paste0('chr',1:22)]
+bam <- readBamFile(args[1], tag=tags, which=which, asMates=TRUE, bigFile=TRUE)
+bam1 <- shiftGAlignmentsList(gal)
+export(bam1, "shifted.bam")
+```
+
+Using `bash` again, sort and index the shifted bam file:
 
 ```bash
-#The user can set the preferred number of processors 
-alignmentSieve --numberOfProcessors max --ATACshift --blackListFileName hg19-blacklist.v2.bed --bam <sample>.blacklist-filtered.bam -o <sample>.tmp.bam
-
-#Sort and index the bam file
-#Set the number of preferred threads with the -@ option
-samtools sort -O bam -o <sample>.shifted.bam <sample>.tmp.bam
+#Run on the bash command line
+samtools sort shifted.bam > <sample>.shifted.bam
 samtools index <sample>.shifted.bam
-
-rm <sample>.tmp.bam
+rm shifted.bam
 ```
 
 ### Assess fragment size distribution and QC
@@ -394,11 +421,17 @@ The number of peaks within a replicated peak file should be >150,000, though val
 
 ### HMMRATAC
 
-```bash
-samtools view -H <sample>.filtered.bam | perl -ne 'if(/^@SQ.*?SN:(\w+)\s+LN:(\d+)/){print $1,"\t",$2,"\n"}' > genome.info
+If working with a Conda environment, HMMRATAC can be installed using `conda install -c bioconda hmmratac` (check the [releases](https://github.com/LiuLabUB/HMMRATAC/releases) to make sure there is not a more recent version, in which case download the executable file and run hmmratac directly).
 
-java -jar HMMRATAC_V1.2.10_exe.jar -b <sample>.filtered.bam -i <sample>.filtered.bam.bai -g genome.info -o <sample>
+```bash
+samtools view -H <sample>.shifted.bam | perl -ne 'if(/^@SQ.*?SN:(\w+)\s+LN:(\d+)/){print $1,"\t",$2,"\n"}' > genome.info
+
+HMMRATAC -b <sample>.shifted.bam -i <sample>.shifted.bam.bai -g genome.info -o <sample>
+
+#java -jar HMMRATAC_V1.2.10_exe.jar -b <sample>.filtered.bam -i <sample>.filtered.bam.bai -g genome.info -o <sample>
 ```
+
+The output files: 
 
 ### Genrich 
 
