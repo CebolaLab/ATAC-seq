@@ -220,7 +220,7 @@ BiocManager::install("Rsamtools")
 The following should be written as an R script:
 
 ```R
-#RUN AS AN R script
+#Run as an R script
 library(BSgenome.Hsapiens.UCSC.hg38)
 library(ATACseqQC)
 library(Rsamtools)
