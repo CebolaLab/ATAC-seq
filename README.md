@@ -217,10 +217,10 @@ BiocManager::install("ATACseqQC")
 BiocManager::install("Rsamtools")
 ```
 
-The following should be written as an R script:
+The following should be written as an R script, called `shift.R`.
 
 ```R
-#Run as an R script
+#Save this an R script (shift.R)
 library(BSgenome.Hsapiens.UCSC.hg38)
 library(ATACseqQC)
 library(Rsamtools)
@@ -240,6 +240,8 @@ Using `bash` again, sort and index the shifted bam file:
 
 ```bash
 #Run on the bash command line
+Rscript shift.R <sample>.blacklist-filtered.bam
+
 samtools sort shifted.bam > <sample>.shifted.bam
 samtools index <sample>.shifted.bam
 rm shifted.bam
