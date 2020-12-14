@@ -258,7 +258,7 @@ The fragment size is expected to show a periodicity of 150/200 bp, reflecting th
 - Plot footprints
 - Plot correlations between samples
 
-The <sample>.shifted.bam file should be analysed in the following steps.
+The `<sample>.shifted.bam` file should be analysed in the following steps.
 
 
 **TO BE COMPLETED**
@@ -372,7 +372,7 @@ One quality metric for peak calling is to calculate the fraction of reads in pea
 awk 'BEGIN{FS=OFS="\t"; print "GeneID\tChr\tStart\tEnd\tStrand"}{print $4, $1, $2+1, $3, "."}' <sample>_peaks.broadPeak > <sample>_peaks.saf
 
 ### count
-featureCounts -p -a <sample>_peaks.saf -F SAF -o readCountInPeaks.txt <sample>.shifted.bam
+featureCounts -p -a <sample>_peaks.saf -F SAF -o <sample>-readCountInPeaks.txt <sample>.shifted.bam
 ```
 
 ![#f03c15](https://via.placeholder.com/15/f03c15/000000?text=+) **QC value**: input the FRiP score into the QC spreadsheet.
