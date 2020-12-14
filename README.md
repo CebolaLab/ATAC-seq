@@ -342,7 +342,7 @@ macs2 bdgcmp -t <sample>.broad_treat_pileup.bdg -c <sample>.broad_control_lambda
 #Sort the bedGraph file and convert to bigWig
 sort -k1,1 -k2,2n <sample>_FE.bdg > <sample>_FE.sorted.bdg
 
-bedGraphToBigWig <sample>_FE.sorted.bdg hg38.chrom.sizes > <sample>_macs2_FE.bw
+bedGraphToBigWig <sample>_FE.sorted.bdg hg38.chrom.sizes <sample>_macs2_FE.bw
 ```
 
 ![#1589F0](https://via.placeholder.com/15/1589F0/000000?text=+) **Output file**: `<sample>_macs2_FE.bw`
@@ -351,12 +351,12 @@ bedGraphToBigWig <sample>_FE.sorted.bdg hg38.chrom.sizes > <sample>_macs2_FE.bw
 
 ```bash
 #Generate the p-value bedGraph
-macs2 bdgcmp -t <sample>.broad_treat_pileup.bdg -c <sample>.broad_control_lambda.bdg -m ppois --o <sample>_ppois.bdg
+macs2 bdgcmp -t <sample>.broad_treat_pileup.bdg -c <sample>.broad_control_lambda.bdg -m ppois -o <sample>_ppois.bdg
 
 #Sort the bedGraph file and convert to bigWig
 sort -k1,1 -k2,2n <sample>_ppois.bdg > <sample>_ppois.sorted.bdg
 
-bedGraphToBigWig <sample>_ppois.sorted.bdg hg38.chrom.sizes > <sample>_macs2_pval.bw
+bedGraphToBigWig <sample>_ppois.sorted.bdg hg38.chrom.sizes <sample>_macs2_pval.bw
 ```
 
 ![#1589F0](https://via.placeholder.com/15/1589F0/000000?text=+) **Output file**: `<sample>_macs2_pval.bw`
