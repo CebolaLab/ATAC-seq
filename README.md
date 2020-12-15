@@ -412,7 +412,7 @@ Replicated peaks are defined by ENCODE as peaks present in the *pooled* analysis
 intersectBed -wa -a <sample>_pooled.broadPeak -b <sample>_rep1_peaks.broadPeak  | awk 'BEGIN {FS="\t" ; OFS = "\t"} {s1=$3-$2 ; s2=$12-$11; if(($19/s1 > 0.5) || ($19/s2 > 0.5)) {print $0}}' | cut -f 1-9 > tmp.bed
 
 #Next, take these peaks and extract the ones which also overlap with replicate 2
-intersectBed -wa -a tmp.bed -b <sample>_rep2_peaks.broadPeak | awk_command | cut_command > tmp_pooled | awk 'BEGIN {FS="\t" ; OFS = "\t"} {s1=$3-$2 ; s2=$12-$11; if(($19/s1 > 0.5) || ($19/s2 > 0.5)) {print $0}}' | cut -f 1-9 > <sample>.replicated_broadPeak.bed
+intersectBed -wa -a tmp.bed -b <sample>_rep2_peaks.broadPeak | awk 'BEGIN {FS="\t" ; OFS = "\t"} {s1=$3-$2 ; s2=$12-$11; if(($19/s1 > 0.5) || ($19/s2 > 0.5)) {print $0}}' | cut -f 1-9 > <sample>.replicated_broadPeak.bed
 ```
 
 ![#1589F0](https://via.placeholder.com/15/1589F0/000000?text=+) **Output file**: `<sample>.replicated_broadPeak.bed`
