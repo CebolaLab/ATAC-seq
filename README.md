@@ -392,7 +392,7 @@ Assuming there is a satisfactory correlation, call peaks on the combined replica
 
 ```bash 
 #call peaks
-macs2 callpeak -Q 0.01 -f BEDPE --nomodel --shift -37 --extsize 73 -B --broad -g 2862010578 --keep-dup all --cutoff-analysis -n <sample>_pooled -t <sample>_rep1.bed <sample>_rep2.bed --outdir macs2/<sample>_pooled 2> macs2_<sample>_pooled.log
+macs2 callpeak -q 0.01 -f BEDPE --nomodel --shift -37 --extsize 73 -B --broad -g 2862010578 --keep-dup all --cutoff-analysis -n <sample>_pooled -t <sample>_rep1.bed <sample>_rep2.bed --outdir macs2/<sample>_pooled 2> macs2_<sample>_pooled.log
 ```
 
 ![#1589F0](https://via.placeholder.com/15/1589F0/000000?text=+) **Output file**: `<sample>_pooled_broad_peaks.broadPeak`
