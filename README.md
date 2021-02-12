@@ -45,10 +45,10 @@ Adapters and low quality reads/bases should be trimmed using one of several prog
 
 <img src="https://github.com/CebolaLab/ATAC-seq/blob/master/Figures/adapters.png" width="800">
 
-For this pipeline, fastp is used to remove adapter sequences. The minimum fragment length is set at 25, since short ATAC-seq fragments can be observed if the transposase cuts adjacent nucleosome-free DNA. 
+For this pipeline, fastp is used to remove adapter sequences. 
 
 ```bash
-fastp -i <sample>_R1.fastq.gz -I <sample>_R2.fastq.gz -o <sample>_R1.trimmed.fastq.gz -O <sample>_R2.trimmed.fastq.gz --detect_adapter_for_pe -l 25 -j <sample>.fastp.json -h <sample>.fastp.html
+fastp -i <sample>_R1.fastq.gz -I <sample>_R2.fastq.gz -o <sample>_R1.trimmed.fastq.gz -O <sample>_R2.trimmed.fastq.gz --detect_adapter_for_pe -j <sample>.fastp.json -h <sample>.fastp.html
 ```
 
 The output of fastp includes a html report, part of which is shown below. This presents the total number of reads before and after filtering, including the % of high quality (Q30) bases. The report also shows the main causes of read removal. In the example below, 1.9% of reads were removed because they were shorter than the minimum read length specified above by the -l argument (25bp).
@@ -88,7 +88,7 @@ bt2idx=/path/to/reference-genome
 To align to hg19/b37:
 ```bash
 #Run the bowtie2 alignment and output a bam alignment file
-bowtie2 --local --very-sensitive --no-mixed --no-discordant -I 25 -X 700 -x $bt2idx/human_g1k_v37 -1 <sample>_R1.trimmed.fastq.gz -2 <sample>_R2.trimmed.fastq.gz | samtools view -bS - > <sample>.bam
+bowtie2 --local --very-sensitive --no-mixed --no-discordant -X 700 -x $bt2idx/human_g1k_v37 -1 <sample>_R1.trimmed.fastq.gz -2 <sample>_R2.trimmed.fastq.gz | samtools view -bS - > <sample>.bam
 ```
 
 To align to GRCh38:
