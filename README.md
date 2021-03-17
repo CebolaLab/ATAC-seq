@@ -177,7 +177,7 @@ A low % of uniquely mapped reads map result from short reads, excessive PCR ampl
 Here we will ***remove*** multi-mapped reads:
 
 ```bash
-samtools view -h -b -f 2 -F 1548 -q 30 <sample>.rmChrM.bam | samtools sort -o <sample>.filtered.bam
+samtools view -h -b -f 2 -F 1548 -q 30 <sample>.marked.bam | samtools sort -o <sample>.filtered.bam
 
 samtools index <sample>.filtered.bam
 
