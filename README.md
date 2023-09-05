@@ -1,4 +1,4 @@
-# ATAC-seq
+# ATAC-seq: a step-by-step analysis pipeline.
 ## **UNDER CONSTRUCTION**
 
 A step-by-step pipeline for the analysis of ATAC-seq data (the **a**ssay for **t**ransposase-**a**ccessible **c**hromatin with **seq**uencing), written by the [Cebola Lab](https://www.imperial.ac.uk/metabolism-digestion-reproduction/research/systems-medicine/genetics--genomics/regulatory-genomics-and-metabolic-disease/). The resources used to build this pipeiline are listed at the bottom in the [Resources](#resources) section. 
