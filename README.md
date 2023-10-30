@@ -204,47 +204,12 @@ rm <sample>.tmp.bam
 
 An optional step in analysing data generated using the Tn5 transposase (such as ATAC-seq, ChIPmentation etc.) is to account for a small DNA insertion, introducted as repair of the transposase-induced nick introduces a 9bp insertion. Reads aligning to the + strand should be offset by +4bp and reads aligned to the -ve strand should be offset by -5bp. For references, see the first ATAC-seq paper by [Buenrostro et al., (2013)](https://www.nature.com/articles/nmeth.2688) and the analysis by [Adey et al., (2010)](https://genomebiology.biomedcentral.com/articles/10.1186/gb-2010-11-12-r119) which showed this insertion bias. Shifting coordinates is only really important if single-base resolution is required, for example in the analysis of transcription factor motifs in ATAC-seq peak footprints. Be aware that some tools do this shifting themselves (so double check manuals!).
 
-We can use the ATACseqQC *R* package. 
-
-If using conda, ensure to install `r-base` and `r-essentials`. (R scripts can be run from the `bash` command line using `Rscript script.R`). Open R and install the following packages:
-
-```R
-if (!requireNamespace("BiocManager", quietly = TRUE))
-    install.packages("BiocManager")
-
-BiocManager::install("BSgenome.Hsapiens.UCSC.hg38")
-BiocManager::install("ATACseqQC")
-BiocManager::install("Rsamtools")
-```
-
-The following should be written as an R script, called `shift.R`.
-
-```R
-#Save this an R script (shift.R)
-library(BSgenome.Hsapiens.UCSC.hg38)
-library(ATACseqQC)
-library(Rsamtools)
-
-## bamfile tags to be read in
-tags <- c("AS", "XN", "XM", "XO", "XG", "NM", "MD", "YS", "YT")
-## files will be output into outPath
-## shift the coordinates of 5'ends of alignments in the bam file
-which <- as(seqinfo(Hsapiens), "GRanges")
-which=which[seqnames(which) %in% paste0('chr',1:22)]
-bam <- readBamFile(args[1], tag=tags, which=which, asMates=TRUE, bigFile=TRUE)
-bam1 <- shiftGAlignmentsList(gal)
-export(bam1, "shifted.bam")
-```
-
-Using `bash` again, run the `Rscript.sh`, then sort and index the shifted bam file:
+We can use the deeptools package. 
 
 ```bash
-#Run on the bash command line
-Rscript shift.R <sample>.blacklist-filtered.bam
+alignmentSieve --numberOfProcessors max --ATACshift --blackListFileName hg38-blacklist.v2.bed --bam blacklist-filtered.bam -o ${prefix}.shifted.bam
 
-samtools sort shifted.bam > <sample>.shifted.bam
-samtools index <sample>.shifted.bam
-rm shifted.bam
+# samtools index ${prefix}.shifted.bam
 ```
 
 ### Assess fragment size distribution and QC
