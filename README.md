@@ -238,8 +238,8 @@ The `deeptools` command `bamCoverage` will be used. The input to `bamCoverage` (
 #2862010578 is the effective genome size for GRCh38 when using 150bp reads and including only regions which are uniquely mappable
 # bam to bigwig
 # Set your preferred number of processors
-bamCoverage --numberOfProcessors 8 --binSize 10 --normalizeUsing RPGC \
-  --effectiveGenomeSize 2862010578 --bam <sample>.shifted.bam -o <sample>.alignment.bw
+bamCoverage --numberOfProcessors 8 --binSize 10 --normalizeUsing BPM \
+  --effectiveGenomeSize 2862010578 --bam <sample>.shifted.bam -o <sample>_coverage_BPM.bw
 ```	
 
 ## Peak calling
